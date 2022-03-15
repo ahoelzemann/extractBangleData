@@ -5,8 +5,9 @@ import decompressor
 
 def save_decompressed_files(dataframes: list, device_id: str):
     import pandas as pd
-    df = pd.concat(dataframes)
+    df = pd.concat(dataframes)[16100:]
     df.to_csv("/Users/alexander/Documents/Ressources/decompressed/" + device_id + ".csv")
+    print("DeviceID: " + device_id + " saved.")
 
 
 def readBinFile(path):
@@ -14,7 +15,7 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-dataset_folder = "/Users/alexander/Documents/Ressources/Activate Data/"
+dataset_folder = "/Users/alexander/Documents/Ressources/IMU_BBSI/"
 folders = [x[1] for x in os.walk(dataset_folder)][0]
 
 activityFilesOrdered = []
@@ -29,7 +30,6 @@ for folder in folders:
     activityFilesOrdered.append(activityFiles)
     day = ""
     filesOfOneDay = []
-    i = 0
     for files in activityFilesOrdered:
         result = list(map(readBinFile, files))
         i = 0
@@ -46,4 +46,4 @@ for folder in folders:
                         pass
             i += 1
 
-        save_decompressed_files(subjectData, folder)
+    save_decompressed_files(subjectData, folder)
