@@ -4,7 +4,54 @@ import os
 import decompressor
 import numpy as np
 import pandas as pd
+import wave
 
+
+def saveAsWave(imu_data, deviceId):
+    #imu_data = np.array(pd.read_csv("/Users/alexander/Documents/Ressources/decompressed/2dd9.csv", names=['timestamp', 'x_axis', 'y_axis', 'z_axis']).iloc[1: , :]['x_axis'], dtype=float)
+    # imu_data = imu_data[:,1:]
+    nchannels = 1
+    sample_with = 2
+    framerate = 50
+    audio_x = (imu_data[:,1] * (2 ** 15 - 1)).astype("<h")
+    audio_y = (imu_data[:,2] * (2 ** 15 - 1)).astype("<h")
+    audio_z = (imu_data[:,3] * (2 ** 15 - 1)).astype("<h")
+    with wave.open("/Users/alexander/Documents/Ressources/wave/"+deviceId + "_x.wav", "w") as f:
+        f.setnchannels(nchannels)
+        f.setsampwidth(sample_with)
+        f.setframerate(framerate)
+        f.writeframes(audio_x.tobytes())
+    with wave.open("/Users/alexander/Documents/Ressources/wave/"+deviceId + "_y.wav", "w") as f:
+        f.setnchannels(nchannels)
+        f.setsampwidth(sample_with)
+        f.setframerate(framerate)
+        f.writeframes(audio_y.tobytes())
+    with wave.open("/Users/alexander/Documents/Ressources/wave/"+deviceId + "_z.wav", "w") as f:
+        f.setnchannels(nchannels)
+        f.setsampwidth(sample_with)
+        f.setframerate(framerate)
+        f.writeframes(audio_z.tobytes())
+
+
+def checkfordrift(df):
+    from time import time
+    timestamps = df.index
+    counter = 0
+    last = None
+    for entry in timestamps:
+        second = entry.second
+        if last is not None:
+            if second != last:
+                # if counter != 50:
+                #     print(str(entry) + ": " + str(counter)+"Hz")
+                # if counter == 50:
+                #     print("50Hz")
+                # if counter > 50:
+                #     print("Drift discovered at: " + str(entry))
+                counter = 0
+            else:
+                counter = counter + 1
+        last = second
 
 def getLastNonNaN(series, index, missingvalues=1):
     if not pd.isna(series[index - 1]):
@@ -76,10 +123,18 @@ def getNaNsAndInterpolationLength(data):
     activityDataStarts = [0]
     missingValues = np.where(data.isnull())[0]
     nanValuesStart.append(missingValues[0])
-    for index in range(len(missingValues) - 1):
-        if (missingValues[index + 1] - missingValues[index]) > 1:
-            nanValuesStart.append(missingValues[index + 1])
-            nanValuesEnd.append(missingValues[index])
+    for index in range(len(missingValues)):
+        try:
+            if (missingValues[index + 1] - missingValues[index]) > 1:
+                nanValuesStart.append(missingValues[index + 1])
+                nanValuesEnd.append(missingValues[index])
+        except:
+            pass
+            # if (missingValues[index + 1] - missingValues[index]) > 1:
+            #     nanValuesStart.append(missingValues[index + 1])
+            #     nanValuesEnd.append(missingValues[index])
+
+
     nanValuesEnd.append(missingValues[-1])
     interpolationLengths = np.subtract(nanValuesEnd, nanValuesStart)
 
@@ -90,9 +145,7 @@ def getNaNsAndInterpolationLength(data):
     activityDataStarts.pop()
     return nanValuesStart, nanValuesEnd, interpolationLengths, activityDataStarts
 
-
-def make_equidistant(data: pd.DataFrame, new_freq):
-
+def make_equidistant1(data: pd.DataFrame, new_freq):
     freq_new_ms = round(((1 / new_freq) * 1000))
     # data = data.set_index("timestamp")
     columns = data.columns
@@ -103,6 +156,24 @@ def make_equidistant(data: pd.DataFrame, new_freq):
     # new_indices = activityIDs.index
     # result.append(activityIDs.to_numpy())
 
+    for column in data:
+        c = data[column]
+        resampledData = c.resample(str(freq_new_ms) + "ms", axis=0).mean()
+        if resampledData.isnull().values.any():
+            resampledData = replaceNaNValues(resampledData)
+        result.append(resampledData)
+    result = np.array(result).T
+    new_timestamps = pd.DatetimeIndex(np.linspace(c.index[0].value, c.index[-1].value, len(result), dtype=np.int64))
+    result = pd.DataFrame(result, columns=columns, index=new_timestamps, dtype=np.float64)
+
+    return result
+
+def make_equidistant(data: pd.DataFrame, new_freq):
+
+    freq_new_ms = round(((1 / new_freq) * 1000))
+    # data = data.set_index("timestamp")
+    columns = data.columns
+    result = []
 
     c = data.copy()
     resampledData = c.resample(str(freq_new_ms) + "ms", axis=0).mean()
@@ -111,34 +182,14 @@ def make_equidistant(data: pd.DataFrame, new_freq):
         nans = [np.NaN,np.NaN,np.NaN,np.NaN]
         nanValuesStart, nanValuesEnd, interpolationLengths, activityDataChunks = getNaNsAndInterpolationLength(resampledData)
 
-        for c in range(len(activityDataChunks)-1):
+        for c in range(len(activityDataChunks)):
             chunk = data[activityDataChunks[c]:nanValuesStart[c]+1]
             chunk = chunk.reset_index().to_numpy()
             final_timestamps = pd.date_range(start=chunk[0,0], end=chunk[-1,0], periods=resampledData[:len(chunk)+interpolationLengths[c]].shape[0]).tolist()
             chunk = interpolate(chunk, final_timestamps)
             result.append(chunk)
-
-
-
-    # for column in data:
-    #     c = data[column]
-    # resampledData = c.resample(str(freq_new_ms) + "ms", axis=0).mean()
-    # new_indices = resampledData.index
-    # if resampledData.isnull().values.any():
-    #     nanValuesStart, nanValuesEnd, interpolationLengths, activityDataChunks = getNaNsAndInterpolationLength(resampledData)
-        # for m in range(len(activityDataChunks)):
-        #     resampledData =
-
-        # print("")
-        # resampledValues = resampledData.values
-        # missingValues = list(map(tuple, np.where(np.isnan(resampledData))))[0]
-        # for index in missingValues:
-        #     resampledData.insert(loc=index, value=0)
-        # resampledData = resampledData.fillna(0)
-
-    # result = np.array(result).T
-    # result = pd.DataFrame(result, columns=columns, index=new_indices, dtype=np.float64)
-
+    result = pd.concat(result)
+    result = make_equidistant1(result, 50)
     return result
 
 def interpolate(data : np.array, timestamps):
@@ -156,50 +207,78 @@ def interpolate(data : np.array, timestamps):
 def save_decompressed_files(dataframes: list, device_id: str):
     indices = []
     data = []
-    options = {"10f0": 15520,
+    options = {"10f0": 16726,
                "2dd9": 16452,
-               "4d70": 16199,
+               "4d70": 16881, # done
                "9bd4": 16264,
                "ce9d": 16110,
                "f2ad": 16100,
                "ac59": 15923,
-               "0846": 16854,  # done
-               "a0da": 16218,
+               "0846": 16854,
+               "a0da": 16940,
                "b512": 15856,
-               "e90f": 16205,  # done
-               "4991": 16063,
-               "05d8": 16100,
+               "e90f": 17010,   # done
+               "4991": 16863,
+               "05d8": 16906,  
                "c6f3": 16208
                }
     start = options[device_id]
     for dataframe in dataframes:
         indices = indices + dataframe.index.tolist()
         data = data + dataframe.values.tolist()
-    # indices = np.reshape(np.concatenate(indices), newshape=(-1,1))
-    # df = np.concatenate(dataframes)
     df = pd.DataFrame(data, index=indices)
     df = make_equidistant(df, 50)
-    df = pd.concat(df)
+
     df = df[start:]
     df.to_csv("/Users/alexander/Documents/Ressources/decompressed/" + device_id + ".csv")
+    checkfordrift(df)
     print("DeviceID: " + device_id + " saved.")
 
 def readBinFile(path):
     bufferedReader = open(path, "rb")
     return bufferedReader.read()
 
+selected_subject = 'a0da'
+all = False
 
 dataset_folder = "/Users/alexander/Documents/Ressources/IMU_BBSI/"
-# dataset_folder = "/Users/alexander/asdf/"
-
-folders = [x[1] for x in os.walk(dataset_folder)][0]
-
 activityFilesOrdered = []
 stepsAndMinutesOrdered = []
-for folder in folders:
-    activityFiles = glob(dataset_folder + folder + "/" + "*.bin")
+
+if all:
+    folders = [x[1] for x in os.walk(dataset_folder)][0]
+    for folder in folders:
+        activityFiles = glob(dataset_folder + folder + "/" + "*.bin")
+        try:
+            activityFiles.remove(dataset_folder + folder + "/" + "d20statusmsgs.bin")
+        except:
+            pass
+        activityFiles = sorted(activityFiles)
+        activityFilesOrdered.append(activityFiles)
+        day = ""
+        filesOfOneDay = []
+        for files in activityFilesOrdered:
+            result = list(map(readBinFile, files))
+            i = 0
+            subjectData = []
+            for file in files:
+                bangleID, filename = file.split("/")[-2], file.split("/")[-1]
+                if len(result[i]) > 0:
+                    try:
+                        subjectData.append(decompressor.decompress(result[i]))
+                    except:
+                        try:
+                            dataframe = decompressor.decompress(result[i][17:])
+                        except:
+                            pass
+                i += 1
+
+        save_decompressed_files(subjectData, folder)
+
+else:
+    activityFiles = glob(dataset_folder + selected_subject + "/" + "*.bin")
     try:
-        activityFiles.remove(dataset_folder + folder + "/" + "d20statusmsgs.bin")
+        activityFiles.remove(dataset_folder + selected_subject + "/" + "d20statusmsgs.bin")
     except:
         pass
     activityFiles = sorted(activityFiles)
@@ -222,4 +301,13 @@ for folder in folders:
                         pass
             i += 1
 
-    save_decompressed_files(subjectData, folder)
+    save_decompressed_files(subjectData, selected_subject)
+
+
+data = []
+decompressed_folder = '/Users/alexander/Documents/Ressources/decompressed/'
+files = os.listdir(decompressed_folder)
+for file in files:
+    if file != ".DS_Store":
+        path = decompressed_folder + file
+        saveAsWave(pd.read_csv(path).to_numpy(), file.split(".")[0])
