@@ -221,18 +221,18 @@ def save_decompressed_files(dataframes: list, device_id: str):
     global_starting_time = pd.Timestamp('2022-02-26 14:13:18.868502784')
     options = {"10f0": 16733,  # sync, RAML, labeled
                "2dd9": 16712,  # sync
-               "4d70": 16881,  #
-               "9bd4": 16264,
-               "ce9d": 16110,
+               "4d70": 16764,  # sync, RAML
+               "9bd4": 16979,
+               "ce9d": 16761,  # sync, RAML
                "f2ad": 16100,
-               "ac59": 15923,
-               "0846": 16854,  # sync, RAML
+               "ac59": 16783,  # sync, RAML
+               "0846": 16737,  # sync, RAML
                "a0da": 16825,  # sync, RAML
                "b512": 16798,  # sync, RAML
                "e90f": 16960,  # sync, RAML, labeled
                "4991": 16863,  # sync, RAML
-               "05d8": 16804,  # sync, RAML
-               "c6f3": 16208
+               "05d8": 16790,  # sync, RAML
+               "c6f3": 16208   # Gianni
                }
     start = options[device_id]
     for dataframe in dataframes:
@@ -265,7 +265,7 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = 'b512'
+selected_subject = '05d8'
 all_ = False
 
 dataset_folder = "/Users/alexander/Documents/Resources/IMU_BBSI/"

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime
 
-labeled_participants = ['10f0']
+labeled_participants = ['4d70']
 
 
 def read_labels(participant: str):
@@ -16,7 +16,9 @@ def read_labels(participant: str):
     timestamps = sensor_data['timestamp'].to_numpy(dtype=str)
     timestamps = list(map(np.datetime64, timestamps))
     timestamps = np.array(timestamps)
-    labels = pd.read_csv('/Users/alexander/Documents/Resources/eaf_projects/' + participant + '.txt', delimiter='\t',
+    # labels = pd.read_csv('/Users/alexander/Documents/Resources/eaf_projects/' + participant + '.txt', delimiter='\t',
+    #                      index_col=0, header=None, lineterminator='\n')
+    labels = pd.read_csv('/Users/alexander/Documents/Resources/txt_Students/' + participant + '.txt', delimiter='\t',
                          index_col=0, header=None, lineterminator='\n')
     labels = labels.reset_index()
     columns = ['layer', 'drop1', 'start', 'start[ms]', 'end', 'end[ms]', 'length', 'length[ms]', 'label']
