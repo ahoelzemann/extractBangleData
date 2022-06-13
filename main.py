@@ -32,7 +32,6 @@ def saveAsWave(imu_data, deviceId):
 
 
 def checkfordrift(df):
-    from time import time
     timestamps = df.index
     counter = 0
     last = None
@@ -214,26 +213,43 @@ def interpolate(data1: np.array, timestamps):
     return result_tmp
 
 
-def save_decompressed_files(dataframes: list, device_id: str):
+def save_decompressed_files(dataframes: list, device_id: str, place:str):
     from bisect import bisect_left
     indices = []
     data = []
     global_starting_time = pd.Timestamp('2022-02-26 14:13:18.868502784')
-    options = {"10f0": 16733,  # sync, RAML, labeled
-               "2dd9": 16712,  # sync
+    if place == "Siegen":
+        options = {"10f0": 16733,  # sync, RAML, labeled
+               "2dd9": 16749,  # sync labeled
                "4d70": 16764,  # sync, RAML
-               "9bd4": 16979,
+               "9bd4": 16979,  # sync, labeled
                "ce9d": 16761,  # sync, RAML
                "f2ad": 16100,
                "ac59": 16783,  # sync, RAML
-               "0846": 16737,  # sync, RAML
+               "0846": 16752,  # sync, RAML
                "a0da": 16825,  # sync, RAML
                "b512": 16798,  # sync, RAML
                "e90f": 16960,  # sync, RAML, labeled
                "4991": 16863,  # sync, RAML
-               "05d8": 16790,  # sync, RAML
+               "05d8": 16790,  # sync, RAML, labeled
                "c6f3": 16208   # Gianni
                }
+    else:
+        options = {"10f0": 1,
+                   "2dd9": 1,
+                   "4d70": 1,
+                   "9bd4": 1,
+                   "ce9d": 1,
+                   "f2ad": 1,
+                   "ac59": 1,
+                   "0846": 1,
+                   "a0da": 1,
+                   "b512": 1,
+                   "e90f": 1,
+                   "4991": 1,
+                   "05d8": 1,
+                   "c6f3": 1
+                   }
     start = options[device_id]
     for dataframe in dataframes:
         indices = indices + dataframe.index.tolist()
@@ -255,7 +271,7 @@ def save_decompressed_files(dataframes: list, device_id: str):
     # test = df.index.get_loc(starting_timestamp)
     df = df[start:]
     print("starting_index: " + str(starting_index))
-    df.to_csv("/Users/alexander/Documents/Resources/decompressed/" + device_id + ".csv")
+    df.to_csv("/Users/alexander/Documents/Resources/decompressed/" + place + "/" + device_id + ".csv")
     checkfordrift(df)
     print("DeviceID: " + device_id + " saved.")
 
@@ -265,9 +281,9 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = '05d8'
+selected_subject = '2dd9'
 all_ = False
-
+# dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"
 dataset_folder = "/Users/alexander/Documents/Resources/IMU_BBSI/"
 activityFilesOrdered = []
 stepsAndMinutesOrdered = []
@@ -300,7 +316,7 @@ if all_:
                             pass
                 i += 1
 
-        save_decompressed_files(subjectData, folder)
+        save_decompressed_files(subjectData, folder, "Siegen")
 
 else:
     activityFiles = glob(dataset_folder + selected_subject + "/" + "*.bin")
@@ -328,10 +344,10 @@ else:
                         pass
             i += 1
 
-    save_decompressed_files(subjectData, selected_subject)
+    save_decompressed_files(subjectData, selected_subject, "Siegen")
 
 data = []
-decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/'
+decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
 files = os.listdir(decompressed_folder)
 for file in files:
     if file != ".DS_Store":
