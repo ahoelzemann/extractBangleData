@@ -7,24 +7,24 @@ import pandas as pd
 import wave
 
 
-def saveAsWave(imu_data, deviceId):
+def saveAsWave(imu_data, deviceId, place):
     nchannels = 1
     sample_with = 2
     framerate = 50
     audio_x = (imu_data[:, 1] * (2 ** 15 - 1)).astype("<h")
     audio_y = (imu_data[:, 2] * (2 ** 15 - 1)).astype("<h")
     audio_z = (imu_data[:, 3] * (2 ** 15 - 1)).astype("<h")
-    with wave.open("/Users/alexander/Documents/Resources/wave/" + deviceId + "_x.wav", "w") as f:
+    with wave.open("/Users/alexander/Documents/Resources/wave/" + place + "/" + deviceId + "_x.wav", "w") as f:
         f.setnchannels(nchannels)
         f.setsampwidth(sample_with)
         f.setframerate(framerate)
         f.writeframes(audio_x.tobytes())
-    with wave.open("/Users/alexander/Documents/Resources/wave/" + deviceId + "_y.wav", "w") as f:
+    with wave.open("/Users/alexander/Documents/Resources/wave/" + place + "/" + deviceId + "_y.wav", "w") as f:
         f.setnchannels(nchannels)
         f.setsampwidth(sample_with)
         f.setframerate(framerate)
         f.writeframes(audio_y.tobytes())
-    with wave.open("/Users/alexander/Documents/Resources/wave/" + deviceId + "_z.wav", "w") as f:
+    with wave.open("/Users/alexander/Documents/Resources/wave/" + place + "/" + deviceId + "_z.wav", "w") as f:
         f.setnchannels(nchannels)
         f.setsampwidth(sample_with)
         f.setframerate(framerate)
@@ -219,9 +219,9 @@ def save_decompressed_files(dataframes: list, device_id: str, place:str):
     data = []
     global_starting_time = pd.Timestamp('2022-02-26 14:13:18.868502784')
     if place == "Siegen":
-        options = {"10f0": 16733,  # sync, RAML, labeled
+        options = {"10f0": 16713,  # sync, RAML, labeled
                "2dd9": 16749,  # sync labeled
-               "4d70": 16764,  # sync, RAML
+               "4d70": 16729,  # sync, RAML
                "9bd4": 16979,  # sync, labeled
                "ce9d": 16761,  # sync, RAML
                "f2ad": 16100,
@@ -239,7 +239,7 @@ def save_decompressed_files(dataframes: list, device_id: str, place:str):
                    "2dd9": 1,
                    "4d70": 1,
                    "9bd4": 1,
-                   "ce9d": 1,
+                   "ce9d": 4523, # 4318
                    "f2ad": 1,
                    "ac59": 1,
                    "0846": 1,
@@ -256,17 +256,6 @@ def save_decompressed_files(dataframes: list, device_id: str, place:str):
         data = data + dataframe.values.tolist()
     df = pd.DataFrame(data, index=indices)
     df = make_equidistant(df, 50)
-    # if df.shape[0] > 326800:
-    #     start = df.shape[0] - 326800
-    # df_copy = df.copy().reset_index()['index']
-    # df_copy = df_copy.reset_index().loc[df_copy.Date == '2020-12-05', 'index']
-
-    # hours = np.where(df.index.hour.to_numpy() == 14)
-    # # hours =
-    # minutes = df.index.minute.to_numpy()[:hours[0][-1]]
-    # minutes = np.where(minutes == 10)
-    # microseconds = df.index.microsecond.to_numpy()[minutes]
-    # starting_index = np.absolute(np.subtract(microseconds, starting_timestamp_millisecond)).argmin()
     starting_index = bisect_left(indices, global_starting_time) - 1
     # test = df.index.get_loc(starting_timestamp)
     df = df[start:]
@@ -281,10 +270,14 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = '2dd9'
+selected_subject = 'ce9d'
 all_ = False
-# dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"
-dataset_folder = "/Users/alexander/Documents/Resources/IMU_BBSI/"
+place = "Boulder"
+dataset_folder = ""
+if place == "Boulder":
+    dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"
+else:
+    dataset_folder = "/Users/alexander/Documents/Resources/IMU_BB/"
 activityFilesOrdered = []
 stepsAndMinutesOrdered = []
 
@@ -316,7 +309,7 @@ if all_:
                             pass
                 i += 1
 
-        save_decompressed_files(subjectData, folder, "Siegen")
+        save_decompressed_files(subjectData, folder, place)
 
 else:
     activityFiles = glob(dataset_folder + selected_subject + "/" + "*.bin")
@@ -344,13 +337,14 @@ else:
                         pass
             i += 1
 
-    save_decompressed_files(subjectData, selected_subject, "Siegen")
+    save_decompressed_files(subjectData, selected_subject, place)
 
 data = []
-decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
+# decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
+decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
 files = os.listdir(decompressed_folder)
 for file in files:
-    if file != ".DS_Store":
+    if file != ".DS_Store" or file != "vids":
         path = decompressed_folder + file
         print("saving as wave")
-        saveAsWave(pd.read_csv(path).to_numpy(), file.split(".")[0])
+        saveAsWave(pd.read_csv(path).to_numpy(), file.split(".")[0], place)

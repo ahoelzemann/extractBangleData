@@ -42,8 +42,9 @@ def plot_imu_data(imu, title, time_as_indices=True):
 
 all = False
 data = []
-subject = '10f0'
+subject = 'ce9d'
 rootdir = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
+time_as_indices = True
 if all:
     files = os.listdir(rootdir)
     files.remove(".DS_Store")
@@ -51,8 +52,8 @@ if all:
         if files[filenumber] != ".DS_Store":
             file = rootdir + files[filenumber]
             # file2 = rootdir + files[filenumber+1]
-            plot_imu_data(pd.read_csv(file).to_numpy(), file, time_as_indices=False)
+            plot_imu_data(pd.read_csv(file).to_numpy(), file, time_as_indices=time_as_indices)
             data.append(pd.read_csv(file))
 else:
     rootdir = rootdir + subject + ".csv"
-    plot_imu_data(pd.read_csv(rootdir).to_numpy(), rootdir, time_as_indices=False)
+    plot_imu_data(pd.read_csv(rootdir).to_numpy(), rootdir, time_as_indices=time_as_indices)
