@@ -1,54 +1,61 @@
 import math
 from glob import glob
 import os
+
+import numpy
+
 import decompressor
 import numpy as np
 import pandas as pd
 import wave
 
 
-def saveAsWave(imu_data, deviceId, place):
+# import viz
+
+
+def saveAsWave(imu_data, deviceId, place, true_freq):
     nchannels = 1
-    sample_with = 2
-    framerate = 50
+    sample_width = 2
+    # true_freq = 50
     audio_x = (imu_data[:, 1] * (2 ** 15 - 1)).astype("<h")
     audio_y = (imu_data[:, 2] * (2 ** 15 - 1)).astype("<h")
     audio_z = (imu_data[:, 3] * (2 ** 15 - 1)).astype("<h")
     with wave.open("/Users/alexander/Documents/Resources/wave/" + place + "/" + deviceId + "_x.wav", "w") as f:
         f.setnchannels(nchannels)
-        f.setsampwidth(sample_with)
-        f.setframerate(framerate)
+        f.setsampwidth(sample_width)
+        f.setframerate(true_freq)
         f.writeframes(audio_x.tobytes())
     with wave.open("/Users/alexander/Documents/Resources/wave/" + place + "/" + deviceId + "_y.wav", "w") as f:
         f.setnchannels(nchannels)
-        f.setsampwidth(sample_with)
-        f.setframerate(framerate)
+        f.setsampwidth(sample_width)
+        f.setframerate(true_freq)
         f.writeframes(audio_y.tobytes())
     with wave.open("/Users/alexander/Documents/Resources/wave/" + place + "/" + deviceId + "_z.wav", "w") as f:
         f.setnchannels(nchannels)
-        f.setsampwidth(sample_with)
-        f.setframerate(framerate)
+        f.setsampwidth(sample_width)
+        f.setframerate(true_freq)
         f.writeframes(audio_z.tobytes())
 
 
 def checkfordrift(df):
     timestamps = df.index
-    counter = 0
+    counter = 1
+    true_freqs = []
     last = None
     for entry in timestamps:
         second = entry.second
         if last is not None:
             if second != last:
-                # if counter != 50:
-                #     print(str(entry) + ": " + str(counter)+"Hz")
-                # if counter == 50:
-                #     print("50Hz")
-                # if counter > 50:
-                #     print("Drift discovered at: " + str(entry))
-                counter = 0
+                true_freqs.append(counter)
+                # if counter < 49:
+                #     # print("Drift discovered at: " + str(entry) + " - " + str(counter))
+                #     idx = idx + 1
+                counter = 1
             else:
                 counter = counter + 1
         last = second
+
+    return true_freqs
 
 
 def getLastNonNaN(series, index, missingvalues=1):
@@ -112,7 +119,7 @@ def replaceNaNValues(series, output_dtype='float'):
         print("Please choose a valid output dtype. You can choose between float, int and string.")
         exit(0)
 
-    return series.round(5).T
+    return series.T
 
 
 def getNaNsAndInterpolationLength(data):
@@ -143,63 +150,92 @@ def getNaNsAndInterpolationLength(data):
     return nanValuesStart, nanValuesEnd, interpolationLengths, activityDataStarts
 
 
-def make_equidistant1(data: pd.DataFrame, new_freq):
-    freq_new_ms = round(((1 / new_freq) * 1000))
-    # data = data.set_index("timestamp")
-    columns = data.columns
-    result = []
-    # activityIDs = data['activityID']
-    # data = data.drop(['activityID'], axis=1)
-    # activityIDs = activityIDs.resample(str(freq_new_ms) + "ms", axis=0).nearest()
-    # new_indices = activityIDs.index
-    # result.append(activityIDs.to_numpy())
-
-    for column in data:
-        c = data[column]
-        resampledData = c.resample(str(freq_new_ms) + "ms", axis=0).mean()
-        if resampledData.isnull().values.any():
-            resampledData = replaceNaNValues(resampledData)
-        result.append(resampledData)
-    result = np.array(result).T
-    new_timestamps = pd.DatetimeIndex(np.linspace(c.index[0].value, c.index[-1].value, len(result), dtype=np.int64))
-    result = pd.DataFrame(result, columns=columns, index=new_timestamps, dtype=np.float64)
-
-    return result
-
-
-def make_equidistant(data: pd.DataFrame, new_freq):
-    freq_new_ms = round(((1 / new_freq) * 1000))
-    # data = data.set_index("timestamp")
-    columns = data.columns
-    result = []
-
-    c = data.copy()
-    resampledData = c.resample(str(freq_new_ms) + "ms", axis=0).mean()
-    new_indices = resampledData.index
-    if resampledData.isnull().values.any():
-        nans = [np.NaN, np.NaN, np.NaN, np.NaN]
-        nanValuesStart, nanValuesEnd, interpolationLengths, activityDataChunks = getNaNsAndInterpolationLength(
-            resampledData)
-
-        for c in range(len(activityDataChunks)):
-            chunk = data[activityDataChunks[c]:nanValuesStart[c] + 1]
-            chunk = chunk.reset_index().to_numpy()
-            final_timestamps = pd.date_range(start=chunk[0, 0], end=chunk[-1, 0],
-                                             periods=resampledData[:len(chunk) + interpolationLengths[c]].shape[
-                                                 0]).tolist()
-            chunk = interpolate(chunk, final_timestamps)
-            result.append(chunk)
-    result = pd.concat(result)
-    result = make_equidistant1(result, 50)
-    return result
-
-
 def find_nearest_ts(ts, list_timestamps):
     from bisect import bisect_left
     # Given a presorted list of timestamps:  s = sorted(index)
     k = bisect_left(list_timestamps, ts)
     result = list_timestamps[max(0, k - 1): k + 2], key = lambda t: abs(ts - t)
     return min(result)
+
+
+def copy_nans_to_loc(data):
+    nanValuesStart, nanValuesEnd, interpolationLengths, activityDataChunks = getNaNsAndInterpolationLength(
+        data)
+    complete_file = []
+    for c in range(len(activityDataChunks)):
+        tmp_result = []
+        if c == 0:
+            asdf = 0
+        else:
+            asdf = nanValuesEnd[c - 1] + 1
+        chunk = data[asdf:nanValuesEnd[c] + 1]
+        nan_start = chunk.shape[0] - (nanValuesEnd[c] - nanValuesStart[c]) - 1
+
+        chunk = chunk.reset_index().to_numpy()
+        n_nans = chunk[nan_start:].shape[0]
+        indices = chunk[:, 0]
+        chunk = np.delete(chunk, 0, axis=1)
+        while n_nans != 0:
+            chunk, n_nans = add_remaining_nans(chunk, n_nans, indices.shape[0])
+        complete_file.append(chunk)
+    complete_file.append(data[nanValuesEnd[-1] + 1:])
+    complete_file = np.concatenate(complete_file, axis=0)
+    return complete_file
+
+
+def add_remaining_nans(data, remaining_nans, original_length):
+    from decimal import Decimal, ROUND_UP
+
+    every_nth_dec = original_length / remaining_nans
+    every_nth = math.ceil(every_nth_dec)
+    every_nth_dec = every_nth_dec - int(every_nth_dec)
+    every_nth_dec = float(Decimal(every_nth_dec).quantize(Decimal(".1"), rounding=ROUND_UP))
+    counter = 0
+    idx = round(original_length / remaining_nans)
+    nans = np.array([np.NaN, np.NaN, np.NaN])
+    decimal_counter = 0.0
+    while remaining_nans != 0:
+        try:
+            data = np.insert(data, obj=idx, values=nans, axis=0)
+            # data = data[:-1]
+            decimal_counter = decimal_counter + every_nth_dec
+            if decimal_counter > 1:
+                idx = idx + every_nth - 1
+                decimal_counter = decimal_counter - 1.0
+            else:
+                idx = idx + every_nth
+
+            # idx = idx + round((original_length - idx) / remaining_nans)
+            remaining_nans = remaining_nans - 1
+            counter = counter + 1
+        except Exception as e:
+            break
+
+    return data, remaining_nans
+
+
+def add_remaining_nans_copy(data, remaining_nans, original_length):
+    every_nth = math.floor(original_length / remaining_nans)
+    start = 0
+    end = every_nth - 1
+    nans = np.array([np.NaN, np.NaN, np.NaN])
+    result = []
+    while remaining_nans != -1:
+        if remaining_nans != 0 and end < data.shape[0]:
+            tmp = list(data[start:end])
+            tmp.append(nans)
+            start = end
+            end = end + every_nth - 1
+        else:
+            tmp = list(data[start:])
+
+        result.append(np.array(tmp))
+        remaining_nans = remaining_nans - 1
+
+    result = np.concatenate(result, axis=0)
+    rest = original_length - result.shape[0]
+
+    return result, rest
 
 
 def interpolate(data1: np.array, timestamps):
@@ -209,42 +245,42 @@ def interpolate(data1: np.array, timestamps):
     # result.append(timestamps)
     for column in range(data1.shape[1]):
         result_tmp.append(np.interp(np.linspace(0, la - 1, num=len(timestamps)), np.arange(la), data1[:, column]))
-    result_tmp = pd.DataFrame(np.array(result_tmp).T, index=timestamps, columns=["acc_x", "axx_y", "acc_z"])
+    result_tmp = pd.DataFrame(np.array(result_tmp).T, index=timestamps, columns=["acc_x", "acc_y", "acc_z"])
     return result_tmp
 
 
-def save_decompressed_files(dataframes: list, device_id: str, place:str):
+def save_decompressed_files(dataframes: list, device_id: str, place: str, true_freq: list):
     from bisect import bisect_left
     indices = []
     data = []
     global_starting_time = pd.Timestamp('2022-02-26 14:13:18.868502784')
     if place == "Siegen":
-        options = {"10f0": 16713,  # sync, RAML, labeled
-               "2dd9": 16749,  # sync labeled
-               "4d70": 16729,  # sync, RAML
-               "9bd4": 16979,  # sync, labeled
-               "ce9d": 16761,  # sync, RAML
-               "f2ad": 16100,
-               "ac59": 16783,  # sync, RAML
-               "0846": 16752,  # sync, RAML
-               "a0da": 16825,  # sync, RAML
-               "b512": 16798,  # sync, RAML
-               "e90f": 16960,  # sync, RAML, labeled
-               "4991": 16863,  # sync, RAML
-               "05d8": 16790,  # sync, RAML, labeled
-               "c6f3": 16208   # Gianni
-               }
+        options = {"10f0": 16906,  # sync, RAML, labeled 16855
+                   "2dd9": 16931,  # sync,       labeled 16868
+                   "4d70": 16949,  # sync, RAML, labeled
+                   "9bd4": 17018,  # sync,       labeled 16924
+                   "ce9d": 16950,  # sync, RAML, labeled 16761 16719
+                   "f2ad": 16992,
+                   "ac59": 16987,  # sync, RAML 16751
+                   "0846": 16949,  # sync, RAML, labeled  16882,
+                   "a0da": 17006,  # sync, RAML, labeled 17006
+                   "b512": 16917,  # sync,16893 RAML, labeled  16917
+                   "e90f": 17111,  # sync, RAML, labeled 16982 16960
+                   "4991": 17001,  # sync, RAML, labeled 16802
+                   "05d8": 16975,  # sync, RAML, labeled
+                   "c6f3": 16208  # Gianni
+                   }
     else:
-        options = {"10f0": 1,
-                   "2dd9": 1,
-                   "4d70": 1,
-                   "9bd4": 1,
-                   "ce9d": 4523, # 4318
-                   "f2ad": 1,
+        options = {"10f0": 29619,
+                   "2dd9": 3771,  # 3771 3652
+                   "4d70": 32766,
+                   "9bd4": 33062,
+                   "ce9d": 4933,  # 4664
+                   "f2ad": 7325,
                    "ac59": 1,
-                   "0846": 1,
-                   "a0da": 1,
-                   "b512": 1,
+                   "0846": 7235,
+                   "a0da": 37293,
+                   "b512": 35593,
                    "e90f": 1,
                    "4991": 1,
                    "05d8": 1,
@@ -254,15 +290,53 @@ def save_decompressed_files(dataframes: list, device_id: str, place:str):
     for dataframe in dataframes:
         indices = indices + dataframe.index.tolist()
         data = data + dataframe.values.tolist()
-    df = pd.DataFrame(data, index=indices)
-    df = make_equidistant(df, 50)
+    df = pd.DataFrame(data, index=indices, columns=["acc_x", "acc_y", "acc_z"])
+    df = df.resample("20ms").mean()
+    df = df.interpolate()
     starting_index = bisect_left(indices, global_starting_time) - 1
     # test = df.index.get_loc(starting_timestamp)
     df = df[start:]
+    # df = df[starting_index:]
     print("starting_index: " + str(starting_index))
+    print("Device_ID: " + device_id + " Has null " + str(df.isnull().values.any()))
     df.to_csv("/Users/alexander/Documents/Resources/decompressed/" + place + "/" + device_id + ".csv")
-    checkfordrift(df)
+    # checkfordrift(df)
     print("DeviceID: " + device_id + " saved.")
+    return df
+
+def make_equidistant(subject_files):
+    import datetime
+    true_freqs = []
+    for fc in range(len(subject_files)):
+        current_df = subject_files[fc]
+        if fc != len(subject_files) - 1:
+            next_df = subject_files[fc + 1]
+
+            current_df = current_df.append(next_df.iloc[0], ignore_index=False)
+            subject_files[fc + 1] = next_df.iloc[1:, :]
+            t = pd.date_range(start=current_df.index[0],
+                              end=current_df.index[-1],
+                              periods=current_df.shape[0])
+            current_df = current_df.set_index(t)
+
+        else:
+            true_freq = round(np.mean(true_freqs))
+            freq_new_ms = ((1 / true_freq) * 1000)
+            new_range = pd.date_range(current_df.index[0], current_df.index[-1], freq=str(round(freq_new_ms)) + "ms")
+            n_nans = new_range.shape[0] - current_df.shape[0]
+            if n_nans > 0:
+                while n_nans != 0:
+                    current_df, n_nans = add_remaining_nans(current_df, n_nans, new_range.shape[0])
+            elif n_nans < 0:
+                new_range = []
+                new_range.append(current_df.index[0])
+                for idx in range(1, current_df.index.shape[0]):
+                    new_range.append(current_df.index[idx-1]+datetime.timedelta(milliseconds=freq_new_ms))
+                current_df = current_df.set_index(pd.DatetimeIndex(new_range))
+        subject_files[fc] = current_df
+        true_freqs.append(round(np.mean(checkfordrift(current_df))))
+
+    return subject_files, true_freqs
 
 
 def readBinFile(path):
@@ -270,14 +344,14 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = 'ce9d'
+selected_subject = 'e90f'
 all_ = False
-place = "Boulder"
+place = "Siegen"
 dataset_folder = ""
 if place == "Boulder":
     dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"
 else:
-    dataset_folder = "/Users/alexander/Documents/Resources/IMU_BB/"
+    dataset_folder = "/Users/alexander/Documents/Resources/IMU_BBSI/"
 activityFilesOrdered = []
 stepsAndMinutesOrdered = []
 
@@ -309,7 +383,21 @@ if all_:
                             pass
                 i += 1
 
-        save_decompressed_files(subjectData, folder, place)
+        subjectData, true_freqs =  make_equidistant(subjectData)
+        subjectData = save_decompressed_files(subjectData, folder, place, true_freqs)
+        if place == "Siegen":
+            decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
+        else:
+            decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
+        # files = os.listdir(decompressed_folder)
+        # for file in files:
+        # if file != ".DS_Store" or file != "vids":
+        path = decompressed_folder + folder + '.csv'
+        print("saving as wave")
+        true_freqs = checkfordrift(subjectData)
+        saveAsWave(pd.read_csv(path).to_numpy(), folder, place, np.mean(true_freqs))
+        print('done')
+
 
 else:
     activityFiles = glob(dataset_folder + selected_subject + "/" + "*.bin")
@@ -337,14 +425,17 @@ else:
                         pass
             i += 1
 
-    save_decompressed_files(subjectData, selected_subject, place)
-
-data = []
-# decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
-decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
-files = os.listdir(decompressed_folder)
-for file in files:
-    if file != ".DS_Store" or file != "vids":
-        path = decompressed_folder + file
-        print("saving as wave")
-        saveAsWave(pd.read_csv(path).to_numpy(), file.split(".")[0], place)
+    subjectData, true_freqs = make_equidistant(subjectData)
+    saved_df = save_decompressed_files(subjectData, selected_subject, place, true_freqs)
+    if place == "Siegen":
+        decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
+    else:
+        decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
+    # files = os.listdir(decompressed_folder)
+    # for file in files:
+    # if file != ".DS_Store" or file != "vids":
+    path = decompressed_folder + selected_subject + '.csv'
+    print("saving as wave")
+    true_freqs = checkfordrift(saved_df)
+    saveAsWave(pd.read_csv(path).to_numpy(), selected_subject, place, np.mean(true_freqs))
+    print('done')
