@@ -272,10 +272,10 @@ def save_decompressed_files(dataframes: list, device_id: str, place: str, true_f
                    }
     else:
         options = {"10f0": 29619,
-                   "2dd9": 3771,  # 3771 3652
+                   "2dd9": 3805,  # 3771 3652
                    "4d70": 32766,
                    "9bd4": 33062,
-                   "ce9d": 4933,  # 4664
+                   "ce9d": 4988,  # 4664
                    "f2ad": 7325,
                    "ac59": 1,
                    "0846": 7235,
@@ -344,9 +344,9 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = 'e90f'
+selected_subject = '2dd9'
 all_ = False
-place = "Siegen"
+place = "Boulder"
 dataset_folder = ""
 if place == "Boulder":
     dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"

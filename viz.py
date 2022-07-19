@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import pandas as pd
 import plotly.colors
 import seaborn as sb
@@ -9,10 +10,11 @@ import matplotlib.pyplot as plt
 def plot_basketball_classes(subject, activity, place, pages):
     from plotly.subplots import make_subplots
     import plotly.express as px
-    import hangtime_dataloader
+    import DatasetHangtime
     import plotly.graph_objects as go
 
-    data = hangtime_dataloader.load_activity_of_subject(subject, activity, place)
+    hangtime = DatasetHangtime()
+    data = DatasetHangtime.load_activity_of_subject(subject, activity, place)
     # Initialize figure with subplots
     fig = make_subplots(
         rows=2, cols=2, subplot_titles=("Plot 1", "Plot 2", "Plot 3", "Plot 4")
@@ -29,8 +31,8 @@ def plot_basketball_classes(subject, activity, place, pages):
             break
         fig = make_subplots(
             rows=3, cols=2,
-            subplot_titles=("Segment " + str(segment), "Segment " + str(segment+1), "Segment " + str(segment+2),
-                            "Segment " + str(segment+3), "Segment " + str(segment+4), "Segment " + str(segment+5))
+            subplot_titles=("Segment " + str(segment), "Segment " + str(segment + 1), "Segment " + str(segment + 2),
+                            "Segment " + str(segment + 3), "Segment " + str(segment + 4), "Segment " + str(segment + 5))
         )
 
         sensor_data_0 = data[segment][['timestamp', 'acc_x', 'acc_y', 'acc_z']]
@@ -41,91 +43,109 @@ def plot_basketball_classes(subject, activity, place, pages):
         sensor_data_5 = data[segment + 5][['timestamp', 'acc_x', 'acc_y', 'acc_z']]
 
         fig.add_trace(
-            go.Scatter(x=sensor_data_0['timestamp'], y=sensor_data_0[sensor_data_0.columns[1]], showlegend=True, mode=mode,
+            go.Scatter(x=sensor_data_0['timestamp'], y=sensor_data_0[sensor_data_0.columns[1]], showlegend=True,
+                       mode=mode,
                        name='x-axis', legendgroup='x-axis',
                        line=dict(width=2, color=colors[0])), row=1, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_0['timestamp'], y=sensor_data_0[sensor_data_0.columns[2]], showlegend=True, mode=mode,
+            go.Scatter(x=sensor_data_0['timestamp'], y=sensor_data_0[sensor_data_0.columns[2]], showlegend=True,
+                       mode=mode,
                        name='y-axis', legendgroup='y-axis',
                        line=dict(width=2, color=colors[8])),
             row=1, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_0['timestamp'], y=sensor_data_0[sensor_data_0.columns[3]], showlegend=True, mode=mode,
+            go.Scatter(x=sensor_data_0['timestamp'], y=sensor_data_0[sensor_data_0.columns[3]], showlegend=True,
+                       mode=mode,
                        name='z-axis', legendgroup='z-axis',
                        line=dict(width=2, color=colors[13])),
             row=1, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_1['timestamp'], y=sensor_data_1[sensor_data_1.columns[1]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_1['timestamp'], y=sensor_data_1[sensor_data_1.columns[1]], showlegend=False,
+                       mode=mode,
                        name='x-axis', legendgroup='x-axis',
                        line=dict(width=2, color=colors[0])),
             row=1, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_1['timestamp'], y=sensor_data_1[sensor_data_1.columns[2]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_1['timestamp'], y=sensor_data_1[sensor_data_1.columns[2]], showlegend=False,
+                       mode=mode,
                        name='y-axis', legendgroup='y-axis',
                        line=dict(width=2, color=colors[8])),
             row=1, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_1['timestamp'], y=sensor_data_1[sensor_data_1.columns[3]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_1['timestamp'], y=sensor_data_1[sensor_data_1.columns[3]], showlegend=False,
+                       mode=mode,
                        name='z-axis', legendgroup='z-axis',
                        line=dict(width=2, color=colors[13])),
             row=1, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_2['timestamp'], y=sensor_data_2[sensor_data_2.columns[1]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_2['timestamp'], y=sensor_data_2[sensor_data_2.columns[1]], showlegend=False,
+                       mode=mode,
                        name='x-axis', legendgroup='x-axis',
                        line=dict(width=2, color=colors[0])),
             row=2, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_2['timestamp'], y=sensor_data_2[sensor_data_2.columns[2]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_2['timestamp'], y=sensor_data_2[sensor_data_2.columns[2]], showlegend=False,
+                       mode=mode,
                        name='y-axis', legendgroup='y-axis',
                        line=dict(width=2, color=colors[8])),
             row=2, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_2['timestamp'], y=sensor_data_2[sensor_data_2.columns[3]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_2['timestamp'], y=sensor_data_2[sensor_data_2.columns[3]], showlegend=False,
+                       mode=mode,
                        name='z-axis', legendgroup='z-axis',
                        line=dict(width=2, color=colors[13])),
             row=2, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_3['timestamp'], y=sensor_data_3[sensor_data_3.columns[1]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_3['timestamp'], y=sensor_data_3[sensor_data_3.columns[1]], showlegend=False,
+                       mode=mode,
                        name='x-axis', legendgroup='x-axis',
                        line=dict(width=2, color=colors[0])),
             row=2, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_3['timestamp'], y=sensor_data_3[sensor_data_3.columns[2]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_3['timestamp'], y=sensor_data_3[sensor_data_3.columns[2]], showlegend=False,
+                       mode=mode,
                        name='y-axis', legendgroup='y-axis',
                        line=dict(width=2, color=colors[8])),
             row=2, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_3['timestamp'], y=sensor_data_3[sensor_data_3.columns[3]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_3['timestamp'], y=sensor_data_3[sensor_data_3.columns[3]], showlegend=False,
+                       mode=mode,
                        name='z-axis', legendgroup='z-axis',
                        line=dict(width=2, color=colors[13])),
             row=2, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_4['timestamp'], y=sensor_data_4[sensor_data_4.columns[1]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_4['timestamp'], y=sensor_data_4[sensor_data_4.columns[1]], showlegend=False,
+                       mode=mode,
                        name='x-axis', legendgroup='x-axis',
                        line=dict(width=2, color=colors[0])),
             row=3, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_4['timestamp'], y=sensor_data_4[sensor_data_4.columns[2]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_4['timestamp'], y=sensor_data_4[sensor_data_4.columns[2]], showlegend=False,
+                       mode=mode,
                        name='y-axis', legendgroup='y-axis',
                        line=dict(width=2, color=colors[8])),
             row=3, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_4['timestamp'], y=sensor_data_4[sensor_data_4.columns[3]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_4['timestamp'], y=sensor_data_4[sensor_data_4.columns[3]], showlegend=False,
+                       mode=mode,
                        name='z-axis', legendgroup='z-axis',
                        line=dict(width=2, color=colors[13])),
             row=3, col=1)
         fig.add_trace(
-            go.Scatter(x=sensor_data_5['timestamp'], y=sensor_data_5[sensor_data_5.columns[1]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_5['timestamp'], y=sensor_data_5[sensor_data_5.columns[1]], showlegend=False,
+                       mode=mode,
                        name='x-axis', legendgroup='x-axis',
                        line=dict(width=2, color=colors[0])),
             row=3, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_5['timestamp'], y=sensor_data_5[sensor_data_5.columns[2]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_5['timestamp'], y=sensor_data_5[sensor_data_5.columns[2]], showlegend=False,
+                       mode=mode,
                        name='y-axis', legendgroup='y-axis',
                        line=dict(width=2, color=colors[8])),
             row=3, col=2)
         fig.add_trace(
-            go.Scatter(x=sensor_data_5['timestamp'], y=sensor_data_5[sensor_data_5.columns[3]], showlegend=False, mode=mode,
+            go.Scatter(x=sensor_data_5['timestamp'], y=sensor_data_5[sensor_data_5.columns[3]], showlegend=False,
+                       mode=mode,
                        name='z-axis', legendgroup='z-axis',
                        line=dict(width=2, color=colors[13])),
             row=3, col=2)
@@ -186,7 +206,23 @@ def plot_imu_data(imu, title, time_as_indices=True):
     plt.show()
 
 
-plot_basketball_classes("b512", "shot", "Siegen", 'all')
+def plot_peaks(df, peaks, dribblings_per_second, subject, place):
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=df.index, y=df,
+                             mode='lines',
+                             name='lines'))
+    fig.add_trace(go.Scatter(x=peaks.index, y=peaks,
+                             mode='markers',
+                             name='markers', connectgaps=False))
+    fig.update_layout(
+        title_text="City: <b>" + place + "</b>, " + "Subject: <b>" + subject + "<br>" + "</b>Activity: <b>dribbling</b><br>Dribblings/sec: <b>" + str(
+            dribblings_per_second) + "</b>")
+    fig.show()
+
+# plot_basketball_classes("10f0", "shot", "Siegen", 'all')
 
 # all = False
 # data = []
