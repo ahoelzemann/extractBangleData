@@ -172,6 +172,146 @@ def plot_basketball_classes(subject, activity, place, pages):
         fig.show()
 
 
+def plot_novice_vs_expert(novices, experts):
+    from plotly.subplots import make_subplots
+    import plotly.express as px
+    import DatasetHangtime
+    import plotly.graph_objects as go
+
+    colors = px.colors.qualitative.Light24
+
+    novices_keys = list(novices.keys())
+    novices_data = list(novices.values())
+    experts_keys = list(experts.keys())
+    experts_data = list(experts.values())
+    # hangtime = DatasetHangtime()
+    # data = DatasetHangtime.load_activity_of_subject(subject, activity, place)
+    # Initialize figure with subplots
+    fig = make_subplots(
+        rows=3, cols=2, subplot_titles=(
+            'Novice: ' + novices_keys[0], "Expert: " + experts_keys[0], 'Novice: ' + novices_keys[1],
+            "Expert: " + experts_keys[1], 'Novice: ' + novices_keys[2], "Expert: " + experts_keys[2])
+    )
+    # n = 200000
+    for x in range(0, 3):
+
+
+        for y in range(0, 2):
+            showlegend = False
+            if x == 0 and y == 0:
+                showlegend = True
+            if y == 0:
+                xs = novices_data[x]['timestamp']
+                ys_accx = novices_data[x]['acc_x']
+                ys_accy = novices_data[x]['acc_y']
+                ys_accz = novices_data[x]['acc_z']
+            else:
+                xs = experts_data[x]['timestamp']
+                ys_accx = experts_data[x]['acc_x']
+                ys_accy = experts_data[x]['acc_y']
+                ys_accz = experts_data[x]['acc_z']
+            # Add traces
+            fig.add_trace(
+                go.Scatter(x=xs, y=ys_accx, showlegend=showlegend,
+                           mode='lines',
+                           name='x-axis', legendgroup='x-axis',
+                           line=dict(width=2, color=colors[0])), row=x + 1, col=y + 1)
+            fig.add_trace(
+                go.Scatter(x=xs, y=ys_accy, showlegend=showlegend,
+                           mode='lines',
+                           name='y-axis', legendgroup='y-axis',
+                           line=dict(width=2, color=colors[8])), row=x + 1, col=y + 1)
+            fig.add_trace(
+                go.Scatter(x=xs, y=ys_accz, showlegend=showlegend,
+                           mode='lines',
+                           name='z-axis', legendgroup='z-axis',
+                           line=dict(width=2, color=colors[13])), row=x + 1, col=y + 1)
+            # Update xaxis properties
+            fig.update_xaxes(title_text="Time", row=x + 1, col=y + 1, showgrid=False)
+
+            # Update yaxis properties
+            fig.update_yaxes(title_text="Acceleration in g", row=x + 1, col=y + 1, showgrid=False)
+
+    # Update title and height
+    fig.update_layout(title_text="Novices vs. Experts</b>")
+
+    fig.show()
+
+
+def plot_novice_vs_expert_fft(novices, experts):
+    from plotly.subplots import make_subplots
+    import plotly.express as px
+    import DatasetHangtime
+    import plotly.graph_objects as go
+
+    colors = px.colors.qualitative.Light24
+
+    # novices_keys = list(novices.keys())
+    # novices_data = list(novices.values())
+    # experts_keys = list(experts.keys())
+    # experts_data = list(experts.values())
+
+    # fig = make_subplots(
+    #     rows=3, cols=2, subplot_titles=(
+    #         'Novice: ' + novices_keys[0], "Expert: " + experts_keys[0], 'Novice: ' + novices_keys[1],
+    #         "Expert: " + experts_keys[1], 'Novice: ' + novices_keys[2], "Expert: " + experts_keys[2])
+    # )
+    fig = make_subplots(
+        rows=3, cols=2, subplot_titles=(
+            "Novice: 1", "Expert: 1", "Novice: 2",
+            "Expert: 2", "Novice: 3", "Expert: 3")
+    )
+    # n = 200000
+    for x in range(0, 3):
+        for y in range(0, 2):
+            if y == 0:
+                fft_result = novices[x]
+                # xs = novices_data[x]['timestamp']
+                # ys_accx = novices_data[x]['acc_x']
+                # ys_accy = novices_data[x]['acc_y']
+                # ys_accz = novices_data[x]['acc_z']
+            else:
+                fft_result = experts[x]
+                # xs = experts_data[x]['timestamp']
+                # ys_accx = experts_data[x]['acc_x']
+                # ys_accy = experts_data[x]['acc_y']
+                # ys_accz = experts_data[x]['acc_z']
+            # Add traces
+            fig.add_trace(
+                go.Scatter(y=fft_result, showlegend=False,
+                           mode='lines',
+                           name='fft', legendgroup='fft',
+                           line=dict(width=2, color=colors[13])), row=x + 1, col=y + 1)
+            # Update xaxis properties
+            fig.update_xaxes(title_text="Frequency", row=x + 1, col=y + 1, showgrid=False)
+
+            # Update yaxis properties
+            fig.update_yaxes(title_text="Magnitude", row=x + 1, col=y + 1, showgrid=False)
+
+    # Update title and height
+    fig.update_layout(title_text="Novices vs. Experts</b>")
+
+    fig.show()
+
+def vizualize_one_player(player_data, player_id):
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_x'],
+                             # mode='lines',
+                             name='x-axis'))
+    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_y'],
+                             mode='lines',
+                             name='y-axis'))
+    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_z'],
+                             mode='lines',
+                             name='z-axis'))
+
+    fig.update_traces(marker_line_width=4)
+    # fig = px.line(x=ts, y=ys.loc[:, ['acc_z']].values.tolist())
+    fig.show()
+
+
 def plot_imu_data(imu, title, time_as_indices=True):
     """
     Method written by kvl for reading out the files that is written by the imu itself

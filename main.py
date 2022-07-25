@@ -253,10 +253,10 @@ def save_decompressed_files(dataframes: list, device_id: str, place: str, true_f
     from bisect import bisect_left
     indices = []
     data = []
-    global_starting_time = pd.Timestamp('2022-02-26 14:13:18.868502784')
+    global_starting_time = pd.Timestamp('2022-02-26 14:13:21.000')
     if place == "Siegen":
         options = {"10f0": 16906,  # sync, RAML, labeled 16855
-                   "2dd9": 16931,  # sync,       labeled 16868
+                   "2dd9": 16920,  # sync,       labeled 16868 16931
                    "4d70": 16949,  # sync, RAML, labeled
                    "9bd4": 17018,  # sync,       labeled 16924
                    "ce9d": 16950,  # sync, RAML, labeled 16761 16719
@@ -267,14 +267,14 @@ def save_decompressed_files(dataframes: list, device_id: str, place: str, true_f
                    "b512": 16917,  # sync,16893 RAML, labeled  16917
                    "e90f": 17111,  # sync, RAML, labeled 16982 16960
                    "4991": 17001,  # sync, RAML, labeled 16802
-                   "05d8": 16975,  # sync, RAML, labeled
+                   "05d8": 16950,  # sync, RAML, labeled 16975
                    "c6f3": 16208  # Gianni
                    }
     else:
         options = {"10f0": 29619,
                    "2dd9": 3805,  # 3771 3652
                    "4d70": 32766,
-                   "9bd4": 33062,
+                   "9bd4": 33733,
                    "ce9d": 4988,  # 4664
                    "f2ad": 7325,
                    "ac59": 1,
@@ -346,7 +346,7 @@ def readBinFile(path):
 
 selected_subject = '2dd9'
 all_ = False
-place = "Boulder"
+place = "Siegen"
 dataset_folder = ""
 if place == "Boulder":
     dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"

@@ -2,11 +2,13 @@ import numpy as np
 import pandas as pd
 import datetime
 
-# labeled_participants = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
-#                         "05d8"]
-# place = 'Siegen'
-labeled_participants = ["2dd9", "10f0", "ce9d", "f2ad"]
-place = 'Boulder'
+# labeled_participants = [
+#                         "2dd9"]
+labeled_participants = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
+                        "05d8"]
+place = 'Siegen'
+# labeled_participants = ["2dd9", "10f0", "ce9d", "f2ad"]
+# place = 'Boulder'
 
 
 # labeled_participants = ["ce9d"]
@@ -36,7 +38,7 @@ def read_labels(participant: str, place: str):
         # if row[-1][-1] != 'rebound':
         start_time = row[1]['start']
         end_time = row[1]['end']
-        dt_start = datetime.datetime.strptime(start_time, "%H:%M:%S.%f").time()
+        dt_start = datetime.datetime.strptime(start_time, "%H:%M:%S.%f")
         timedelta_start = pd.Timedelta(hours=dt_start.hour, minutes=dt_start.minute, seconds=dt_start.second,
                                        microseconds=dt_start.microsecond).to_timedelta64()
         dt_end = datetime.datetime.strptime(end_time, "%H:%M:%S.%f").time()
