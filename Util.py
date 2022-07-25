@@ -29,8 +29,13 @@ def get_median_string(local_list):
 
 def calc_magnitude(sample):
 
-    return np.abs(np.sqrt(math.pow(sample[0], 2) + math.pow(sample[1], 2) + math.pow(sample[2], 2)))
+    return np.abs(math.sqrt(math.pow(sample[0], 2) + math.pow(sample[1], 2) + math.pow(sample[2], 2)))
 
+def calc_magnitude_wrapper(dataframe: pd.DataFrame):
+    signal = dataframe.loc[:, ['acc_x', 'acc_y', 'acc_z']].to_numpy()
+    dataframe['magnitude'] = list(map(calc_magnitude, signal))
+
+    return dataframe
 
 def cut_df_at_timestamps(df, start, end):
     from datetime import datetime
@@ -51,3 +56,12 @@ def cut_df_at_timestamps(df, start, end):
     # start = datetime.strptime(start, '%M:%S')
     # end = datetime.strptime(end, '%M:%S')
     return final_chunk
+
+def calc_fft(mag):
+    from scipy.fft import fft
+    mag = mag.to_numpy()
+    signalFFT = fft(mag)
+    signalPSD = np.abs(signalFFT)[1:101]
+    dominant_freq_index = np.where(signalPSD == np.amax(signalPSD))[0]
+    signal_to_noise_ratio = signalPSD[dominant_freq_index] / np.mean(np.delete(signalPSD, dominant_freq_index))
+    return signalPSD, signal_to_noise_ratio[0]

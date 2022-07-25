@@ -61,3 +61,22 @@ def show_periodicity_novices_experts(novices, experts):
 
 
     return nov_ffts, exp_ffts, signal_to_noise_nov, signal_to_noise_exp
+
+
+def feature_analysis(subjects):
+
+    import Util
+    # calc magnitude
+    subjects.features = {}
+    for subject in subjects.data:
+        subjects.data[subject] = Util.calc_magnitude_wrapper(subjects.data[subject])
+        # fft
+        fft, signal_to_noise_ratio = Util.calc_fft(subjects.data[subject]['magnitude'])
+        # std
+
+        subjects.features[subject] = {
+            'stds': subjects.data[subject].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']].std(),
+            'fft': fft,
+            'signal_to_noise_ratio': signal_to_noise_ratio
+        }
+    return subjects

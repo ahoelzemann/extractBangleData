@@ -272,18 +272,15 @@ def save_decompressed_files(dataframes: list, device_id: str, place: str, true_f
                    }
     else:
         options = {"10f0": 29619,
-                   "2dd9": 3805,  # 3771 3652
+                   "2dd9": 3805,  #
                    "4d70": 32766,
                    "9bd4": 33733,
-                   "ce9d": 4988,  # 4664
+                   "ce9d": 4988,  #
                    "f2ad": 7325,
                    "ac59": 1,
                    "0846": 7235,
                    "a0da": 37293,
                    "b512": 35593,
-                   "e90f": 1,
-                   "4991": 1,
-                   "05d8": 1,
                    "c6f3": 1
                    }
     start = options[device_id]
