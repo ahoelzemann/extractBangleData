@@ -140,7 +140,6 @@ hangtime_si.load_data_of_subject('05d8', 'expert')
 hangtime_bo.load_data_of_subject('2dd9', 'novice')
 hangtime_bo.load_data_of_subject('10f0', 'novice')
 
-
 # novices_and_experts = novices.update(experts)
 # experiments.show_periodicity_novices_experts(novices, experts)
 # experiments.novice_vs_expert_dribbling(novices, experts)
@@ -168,7 +167,7 @@ hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'layup', mode='
 labeled_subjects = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
                     "05d8"]
 # viz.plot_novice_vs_expert(hangtime_si, hangtime_bo, activity='layup')
-viz.plot_full_feature_analysis(hangtime_si, hangtime_bo, activity='layup')
+viz.plot_full_feature_analysis(hangtime_si, hangtime_bo, (['2dd9_si', 'ac59_si', 'f2ad_si'], ['2dd9_bo', '10f0_bo', '0846_si']), activity='layup')
 
 # # labeled_subjects = ['05d8']
 # for subject in labeled_subjects:

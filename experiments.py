@@ -74,6 +74,8 @@ def feature_analysis(dataframe, activity='complete_signal', start=0, end=-1, mod
 
         dataframe.players[subject]['features'][activity] = {
             'stds': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][start:end].std(),
+            'means': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][
+                    start:end].mean(),
             'fft': fft,
             'signal_to_noise_ratio': signal_to_noise_ratio,
             'start_index': start,

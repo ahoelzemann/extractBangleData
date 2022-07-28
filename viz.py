@@ -407,13 +407,40 @@ def plot_peaks(df, peaks, dribblings_per_second, subject, place, show=False):
 
 def plot_std_mean_box_plot(stds, means):
     import plotly.express as px
-    df = px.data.tips()
+    # df = px.data.tips()
     fig = px.box(df, y="total_bill")
-    fig.show()
+    # fig.show()
 
     return fig
 
+
 def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity='all'):
+    experts = participants[0]
+    novices = participants[1]
+    plots_experts = {}
+    plots_novices = {}
+    for expert in experts:
+        expert, location = expert.split("_")
+        plots_experts[expert] = {}
+        if location == "si":
+            stds, mean = hangtime_si.players[expert]['features'][activity]['stds'], hangtime_si.players[expert]['features'][activity][
+                'means']
+        else:
+            stds, mean = hangtime_bo.players[expert]['features'][activity]['stds'], hangtime_si.players[expert]['features'][activity][
+                'means']
+        plots_experts[expert]['std_mean'] = plot_std_mean_box_plot(stds, mean)
+    for novice in novices:
+        novice, location = novice.split("_")
+        plots_novices[novice] = {}
+        if location == "si":
+            stds, mean = hangtime_si.players[novice]['features'][activity]['stds'], \
+                         hangtime_si.players[novice]['features'][activity][
+                             'means']
+        else:
+            stds, mean = hangtime_bo.players[novice]['features'][activity]['stds'], \
+                         hangtime_si.players[novice]['features'][activity][
+                             'means']
+        plots_novices[novice]['std_mean'] = plot_std_mean_box_plot(stds, mean)
     hangtime_si = Util.cut_participants(hangtime_si, participants[0])
     hangtime_bo = Util.cut_participants(hangtime_bo, participants[1])
     # for
