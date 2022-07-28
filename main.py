@@ -306,6 +306,7 @@ def make_equidistant(subject_files):
     true_freqs = []
     for fc in range(len(subject_files)):
         current_df = subject_files[fc]
+        # check if file the is last file
         if fc != len(subject_files) - 1:
             next_df = subject_files[fc + 1]
 
@@ -386,9 +387,6 @@ if all_:
             decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Siegen/'
         else:
             decompressed_folder = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
-        # files = os.listdir(decompressed_folder)
-        # for file in files:
-        # if file != ".DS_Store" or file != "vids":
         path = decompressed_folder + folder + '.csv'
         print("saving as wave")
         true_freqs = checkfordrift(subjectData)

@@ -6,11 +6,13 @@ import plotly.colors
 import seaborn as sb
 import matplotlib.pyplot as plt
 
+import Util
+
 
 def plot_basketball_classes(subject, activity, place, pages):
     from plotly.subplots import make_subplots
     import plotly.express as px
-    import DatasetHangtime
+    # import DatasetHangtime
     import plotly.graph_objects as go
 
     hangtime = DatasetHangtime()
@@ -172,45 +174,88 @@ def plot_basketball_classes(subject, activity, place, pages):
         fig.show()
 
 
-def plot_novice_vs_expert(novices, experts):
+def plot_novice_vs_expert(hangtime_si, hangtime_bo, activity='all', show=True):
     from plotly.subplots import make_subplots
     import plotly.express as px
-    import DatasetHangtime
+    # import DatasetHangtime
     import plotly.graph_objects as go
 
     colors = px.colors.qualitative.Light24
+    novices = []
+    experts = []
 
-    novices_keys = list(novices.keys())
-    novices_data = list(novices.values())
-    experts_keys = list(experts.keys())
-    experts_data = list(experts.values())
+    for participant in hangtime_si.skills:
+        if hangtime_si.skills[participant] == 'novice':
+            novices.append(participant + "_si")
+        else:
+            experts.append(participant + "_si")
+
+    for participant in hangtime_bo.skills:
+        if hangtime_bo.skills[participant] == 'novice':
+            novices.append(participant + "_bo")
+        else:
+            experts.append(participant + "_bo")
+    start = 0
+    end = -1
     # hangtime = DatasetHangtime()
     # data = DatasetHangtime.load_activity_of_subject(subject, activity, place)
     # Initialize figure with subplots
     fig = make_subplots(
         rows=3, cols=2, subplot_titles=(
-            'Novice: ' + novices_keys[0], "Expert: " + experts_keys[0], 'Novice: ' + novices_keys[1],
-            "Expert: " + experts_keys[1], 'Novice: ' + novices_keys[2], "Expert: " + experts_keys[2])
+            'Novice: ' + novices[0], "Expert: " + experts[0], 'Novice: ' + novices[1],
+            "Expert: " + experts[1], 'Novice: ' + novices[2], "Expert: " + experts[2])
     )
     # n = 200000
     for x in range(0, 3):
 
-
         for y in range(0, 2):
+
             showlegend = False
             if x == 0 and y == 0:
                 showlegend = True
             if y == 0:
-                xs = novices_data[x]['timestamp']
-                ys_accx = novices_data[x]['acc_x']
-                ys_accy = novices_data[x]['acc_y']
-                ys_accz = novices_data[x]['acc_z']
+                novice, location = novices[x].split("_")
+                if location == "si":
+                    player_data = hangtime_si.data[novice]
+                    if activity != 'all':
+                        start, end = hangtime_si.activity_indices[activity][novice]['starts'][
+                                         hangtime_si.activity_indices[activity][novice]['longest_intervall']], \
+                                     hangtime_si.activity_indices[activity][novice]['ends'][
+                                         hangtime_si.activity_indices[activity][novice]['longest_intervall']]
+                else:
+                    player_data = hangtime_bo.data[novice]
+                    if activity != 'all':
+                        start, end = hangtime_bo.activity_indices[activity][novice]['starts'][
+                                         hangtime_bo.activity_indices[activity][novice]['longest_intervall']], \
+                                     hangtime_bo.activity_indices[activity][novice]['ends'][
+                                         hangtime_bo.activity_indices[activity][novice]['longest_intervall']]
+
+                xs = player_data['timestamp']
+                ys_accx = player_data['acc_x']
+                ys_accy = player_data['acc_y']
+                ys_accz = player_data['acc_z']
             else:
-                xs = experts_data[x]['timestamp']
-                ys_accx = experts_data[x]['acc_x']
-                ys_accy = experts_data[x]['acc_y']
-                ys_accz = experts_data[x]['acc_z']
+                expert, location = experts[x].split("_")
+                if location == "si":
+                    player_data = hangtime_si.data[expert]
+                    if activity != 'all':
+                        start, end = hangtime_si.activity_indices[activity][expert]['starts'][
+                                         hangtime_si.activity_indices[activity][expert]['longest_intervall']], \
+                                     hangtime_si.activity_indices[activity][expert]['ends'][
+                                         hangtime_si.activity_indices[activity][expert]['longest_intervall']]
+
+                else:
+                    player_data = hangtime_bo.data[expert]
+                    start, end = hangtime_bo.activity_indices[activity][expert]['starts'][
+                                     hangtime_bo.activity_indices[activity][expert]['longest_intervall']], \
+                                 hangtime_bo.activity_indices[activity][expert]['ends'][
+                                     hangtime_bo.activity_indices[activity][expert]['longest_intervall']]
+                xs = player_data['timestamp']
+                ys_accx = player_data['acc_x']
+                ys_accy = player_data['acc_y']
+                ys_accz = player_data['acc_z']
             # Add traces
+            start, end = xs[start], xs[end]
             fig.add_trace(
                 go.Scatter(x=xs, y=ys_accx, showlegend=showlegend,
                            mode='lines',
@@ -227,15 +272,17 @@ def plot_novice_vs_expert(novices, experts):
                            name='z-axis', legendgroup='z-axis',
                            line=dict(width=2, color=colors[13])), row=x + 1, col=y + 1)
             # Update xaxis properties
-            fig.update_xaxes(title_text="Time", row=x + 1, col=y + 1, showgrid=False)
+            fig.update_xaxes(title_text="Time", row=x + 1, col=y + 1, showgrid=False, range=[start, end])
 
             # Update yaxis properties
             fig.update_yaxes(title_text="Acceleration in g", row=x + 1, col=y + 1, showgrid=False)
 
     # Update title and height
     fig.update_layout(title_text="Novices vs. Experts</b>")
-
-    fig.show()
+    if show:
+        fig.show()
+    else:
+        return fig
 
 
 def plot_novice_vs_expert_fft(novices, experts):
@@ -246,16 +293,6 @@ def plot_novice_vs_expert_fft(novices, experts):
 
     colors = px.colors.qualitative.Light24
 
-    # novices_keys = list(novices.keys())
-    # novices_data = list(novices.values())
-    # experts_keys = list(experts.keys())
-    # experts_data = list(experts.values())
-
-    # fig = make_subplots(
-    #     rows=3, cols=2, subplot_titles=(
-    #         'Novice: ' + novices_keys[0], "Expert: " + experts_keys[0], 'Novice: ' + novices_keys[1],
-    #         "Expert: " + experts_keys[1], 'Novice: ' + novices_keys[2], "Expert: " + experts_keys[2])
-    # )
     fig = make_subplots(
         rows=3, cols=2, subplot_titles=(
             "Novice: 1", "Expert: 1", "Novice: 2",
@@ -292,6 +329,7 @@ def plot_novice_vs_expert_fft(novices, experts):
     fig.update_layout(title_text="Novices vs. Experts</b>")
 
     fig.show()
+
 
 def vizualize_one_player(player_data, player_id):
     import plotly.graph_objects as go
@@ -346,7 +384,7 @@ def plot_imu_data(imu, title, time_as_indices=True):
     plt.show()
 
 
-def plot_peaks(df, peaks, dribblings_per_second, subject, place):
+def plot_peaks(df, peaks, dribblings_per_second, subject, place, show=False):
     import plotly.graph_objects as go
 
     fig = go.Figure()
@@ -360,24 +398,23 @@ def plot_peaks(df, peaks, dribblings_per_second, subject, place):
     fig.update_layout(
         title_text="City: <b>" + place + "</b>, " + "Subject: <b>" + subject + "<br>" + "</b>Activity: <b>dribbling</b><br>Dribblings/sec: <b>" + str(
             dribblings_per_second) + "</b>")
+    if show:
+        fig.show()
+
+    else:
+        return fig
+
+
+def plot_std_mean_box_plot(stds, means):
+    import plotly.express as px
+    df = px.data.tips()
+    fig = px.box(df, y="total_bill")
     fig.show()
 
-# plot_basketball_classes("10f0", "shot", "Siegen", 'all')
+    return fig
 
-# all = False
-# data = []
-# subject = '2dd9' #
-# rootdir = '/Users/alexander/Documents/Resources/decompressed/Boulder/'
-# time_as_indices = False
-# if all:
-#     files = os.listdir(rootdir)
-#     files.remove(".DS_Store")
-#     for filenumber in range(0, len(files)):
-#         if files[filenumber] != ".DS_Store":
-#             file = rootdir + files[filenumber]
-#             # file2 = rootdir + files[filenumber+1]
-#             plot_imu_data(pd.read_csv(file).to_numpy(), file, time_as_indices=time_as_indices)
-#             data.append(pd.read_csv(file))
-# else:
-#     rootdir = rootdir + subject + ".csv"
-#     plot_imu_data(pd.read_csv(rootdir).to_numpy(), rootdir, time_as_indices=time_as_indices)
+def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity='all'):
+    hangtime_si = Util.cut_participants(hangtime_si, participants[0])
+    hangtime_bo = Util.cut_participants(hangtime_bo, participants[1])
+    # for
+    # std_mean_plots = plot_std_mean_box_plot(hangtime_si, hangtime_bo)

@@ -1,3 +1,5 @@
+import numpy as np
+
 import Util
 import viz
 
@@ -31,6 +33,7 @@ def novice_vs_expert_dribbling(novices, experts):
     viz.plot_novice_vs_expert(novices=novices, experts=experts)
     viz.plot_novice_vs_expert_fft(nov_ffts, exp_ffts)
 
+
 def show_periodicity_novices_experts(novices, experts):
     from scipy.fft import fft, ifft, fftfreq
     import numpy as np
@@ -59,24 +62,35 @@ def show_periodicity_novices_experts(novices, experts):
         signal_to_noise_exp.append(signal_to_noise_ratio[0])
         exp_ffts.append(signalPSD)
 
-
     return nov_ffts, exp_ffts, signal_to_noise_nov, signal_to_noise_exp
 
 
-def feature_analysis(subjects):
-
+def feature_analysis(dataframe, activity='complete_signal', start=0, end=-1, mode='not_specified'):
     import Util
     # calc magnitude
-    subjects.features = {}
-    for subject in subjects.data:
-        subjects.data[subject] = Util.calc_magnitude_wrapper(subjects.data[subject])
-        # fft
-        fft, signal_to_noise_ratio = Util.calc_fft(subjects.data[subject]['magnitude'])
-        # std
 
-        subjects.features[subject] = {
-            'stds': subjects.data[subject].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']].std(),
+    for subject in dataframe.players:
+        fft, signal_to_noise_ratio = Util.calc_fft(dataframe.players[subject]['data']['magnitude'][start:end])
+
+        dataframe.players[subject]['features'][activity] = {
+            'stds': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][start:end].std(),
             'fft': fft,
-            'signal_to_noise_ratio': signal_to_noise_ratio
+            'signal_to_noise_ratio': signal_to_noise_ratio,
+            'start_index': start,
+            'end_index': end,
+            'mode' : mode
         }
-    return subjects
+    return dataframe
+
+
+def feature_analysis_activity(dataframe, activity, start=0, end=-1, mode='longest_intervall'):
+
+    for subject in dataframe.players:
+        if mode == 'longest_intervall':
+            end = dataframe.players[subject]['activity_indices'][activity]['ends'][
+                dataframe.players[subject]['activity_indices'][activity]['longest_intervall']]
+            start = dataframe.players[subject]['activity_indices'][activity]['starts'][
+                dataframe.players[subject]['activity_indices'][activity]['longest_intervall']]
+            # signal = dataframe.data[subject]['magnitude']
+        feature_analysis(dataframe, activity, start, end, mode)
+    return dataframe

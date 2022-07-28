@@ -3,6 +3,7 @@ import math
 import numpy as np
 import pandas as pd
 
+
 def mean_filter(df, window_size):
     # df = df.set_index('timestamp')
     sample_windows = []
@@ -12,7 +13,7 @@ def mean_filter(df, window_size):
         timestamp_window = []
         for k in range(0, window_size):
             try:
-                sample = df.iloc[n+k]
+                sample = df.iloc[n + k]
                 sample_window.append(sample['acc_z'])
                 timestamp_window.append(sample['timestamp'])
             except:
@@ -25,17 +26,20 @@ def mean_filter(df, window_size):
 
 
 def get_median_string(local_list):
-    return local_list[int(len(local_list)/2)]
+    return local_list[int(len(local_list) / 2)]
+
 
 def calc_magnitude(sample):
-
     return np.abs(math.sqrt(math.pow(sample[0], 2) + math.pow(sample[1], 2) + math.pow(sample[2], 2)))
 
-def calc_magnitude_wrapper(dataframe: pd.DataFrame):
-    signal = dataframe.loc[:, ['acc_x', 'acc_y', 'acc_z']].to_numpy()
-    dataframe['magnitude'] = list(map(calc_magnitude, signal))
+
+def calc_magnitude_wrapper(dataframe):
+    for subject in dataframe.players:
+        signal = dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z']].to_numpy()
+        dataframe.players[subject]['data']['magnitude'] = list(map(calc_magnitude, signal))
 
     return dataframe
+
 
 def cut_df_at_timestamps(df, start, end):
     from datetime import datetime
@@ -57,6 +61,7 @@ def cut_df_at_timestamps(df, start, end):
     # end = datetime.strptime(end, '%M:%S')
     return final_chunk
 
+
 def calc_fft(mag):
     from scipy.fft import fft
     mag = mag.to_numpy()
@@ -65,3 +70,11 @@ def calc_fft(mag):
     dominant_freq_index = np.where(signalPSD == np.amax(signalPSD))[0]
     signal_to_noise_ratio = signalPSD[dominant_freq_index] / np.mean(np.delete(signalPSD, dominant_freq_index))
     return signalPSD, signal_to_noise_ratio[0]
+
+
+# def cut_participants(df, participants_to_cut):
+#     all_participants = df.skills.keys()
+#
+#     for particpant in all_participants:
+#
+#     return
