@@ -4,10 +4,12 @@ import datetime
 
 # labeled_participants = [
 #                         "2dd9"]
-labeled_participants = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
-                        "05d8"]
-place = 'Siegen'
-# labeled_participants = ["2dd9", "10f0", "ce9d", "f2ad"]
+# labeled_participants = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
+#                         "05d8"] # SI
+place = 'Boulder'
+labeled_participants = ["2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "c6f3", ] # Bo
+# labeled_participants = ['ac59']
+
 # place = 'Boulder'
 
 
@@ -69,5 +71,8 @@ def read_labels(participant: str, place: str):
 for participant in labeled_participants:
     data = read_labels(participant=participant, place=place)
     print("Device_ID: " + participant + " Has null " + str(data.isnull().values.any()))
-
+    if data.isnull().values.any():
+        nulls = data.iloc[np.where(data.isnull().values == True)]
+        print(nulls)
+    # if participant == ''
     data.to_csv('/Users/alexander/Documents/Resources/ready/' + place + '/' + participant + '.csv', sep=',')

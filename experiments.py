@@ -67,21 +67,52 @@ def show_periodicity_novices_experts(novices, experts):
 
 def feature_analysis(dataframe, activity='complete_signal', start=0, end=-1, mode='not_specified'):
     import Util
-    # calc magnitude
-
     for subject in dataframe.players:
         fft, signal_to_noise_ratio = Util.calc_fft(dataframe.players[subject]['data']['magnitude'][start:end])
 
-        dataframe.players[subject]['features'][activity] = {
-            'stds': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][start:end].std(),
-            'means': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][
-                    start:end].mean(),
-            'fft': fft,
-            'signal_to_noise_ratio': signal_to_noise_ratio,
-            'start_index': start,
-            'end_index': end,
-            'mode' : mode
-        }
+        if activity != 'complete_signal':
+            peaks, n_dribblings, filtered_magnitude = Util.get_peaks(activity,
+                                                 dataframe.players[subject]['data'][['timestamp', 'magnitude']][
+                                                 start:end])
+            if activity == 'dribbling':
+                dataframe.players[subject]['features'][activity] = {
+                    'stds': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][
+                            start:end].std(),
+                    'means': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][
+                             start:end].mean(),
+                    'signal_peaks' : peaks,
+                    'filtered_magnitude': filtered_magnitude,
+                    'dribblings_per_seconds' : n_dribblings,
+                    'fft': fft,
+                    'snr': signal_to_noise_ratio,
+                    'start_index': start,
+                    'end_index': end,
+                    'mode': mode
+                }
+            else:
+                dataframe.players[subject]['features'][activity] = {
+                    'stds': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][start:end].std(),
+                    'means': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][
+                            start:end].mean(),
+                    'signal_peaks': peaks,
+                    'filtered_magnitude': filtered_magnitude,
+                    'fft': fft,
+                    'snr': signal_to_noise_ratio,
+                    'start_index': start,
+                    'end_index': end,
+                    'mode' : mode
+                }
+        else: dataframe.players[subject]['features'][activity] = {
+                    'stds': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][start:end].std(),
+                    'means': dataframe.players[subject]['data'].loc[:, ['acc_x', 'acc_y', 'acc_z', 'magnitude']][
+                            start:end].mean(),
+                    'fft': fft,
+                    'snr': signal_to_noise_ratio,
+                    'start_index': start,
+                    'end_index': end,
+                    'mode' : mode
+                }
+
     return dataframe
 
 

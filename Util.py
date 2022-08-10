@@ -13,9 +13,10 @@ def mean_filter(df, window_size):
         timestamp_window = []
         for k in range(0, window_size):
             try:
-                sample = df.iloc[n + k]
-                sample_window.append(sample['acc_z'])
-                timestamp_window.append(sample['timestamp'])
+                sample = df['magnitude'].iloc[n + k]
+                index = df['timestamp'].iloc[n + k]
+                sample_window.append(sample)
+                timestamp_window.append(index)
             except:
                 break
         sample_windows.append(sample_window)
@@ -72,9 +73,138 @@ def calc_fft(mag):
     return signalPSD, signal_to_noise_ratio[0]
 
 
-# def cut_participants(df, participants_to_cut):
-#     all_participants = df.skills.keys()
-#
-#     for particpant in all_participants:
-#
-#     return
+def get_peaks(activity, df, printing=False):
+    from scipy.signal import find_peaks
+    import viz
+    import numpy as np
+    from scipy.signal import savgol_filter
+    # df = max(df, key=len).reset_index().loc[:, ['timestamp', 'acc_z']]
+    # df = max(df, key=len).reset_index()
+    filtered_signal = mean_filter(df, 10)
+    n_dribblings = None
+    # filtered_signal = pd.Series(savgol_filter(df.loc[:, 'acc_z'], 100, 1))
+    peaks, _ = find_peaks(filtered_signal, prominence=0.9)
+
+    y_val_peaks = np.full(fill_value=np.nan, shape=(filtered_signal.shape[0]))
+    y_val_peaks[peaks] = filtered_signal.iloc[peaks]
+    y_val_peaks = pd.Series(y_val_peaks, index=filtered_signal.index)
+    y_val_peaks = y_val_peaks.dropna()
+    if activity == 'dribbling':
+        n_dribblings = _calc_dribblings_per_second( y_val_peaks)
+
+    # if printing:
+    #     fig = viz.plot_peaks(filtered_signal, y_val_peaks, n_dribblings, subject)
+    return y_val_peaks, n_dribblings, filtered_signal
+
+
+def _calc_dribblings_per_second(y_val_peaks):
+    import numpy as np
+    from datetime import datetime
+
+    peak_indices = y_val_peaks.index.values
+    last_second = datetime.strptime(peak_indices[0], '%Y-%m-%d %H:%M:%S.%f').second
+    counter = 1
+    dribblings_per_second = []
+    for i in range(1, len(peak_indices)):
+        current_second = datetime.strptime(peak_indices[i], '%Y-%m-%d %H:%M:%S.%f').second
+        if current_second == last_second:
+            counter = counter + 1
+        else:
+            dribblings_per_second.append(counter)
+            counter = 1
+        last_second = current_second
+        # print()
+
+    return np.mean(dribblings_per_second)
+
+def gather_plots(hangtime_si, hangtime_bo, participants, activity='complete_signal'):
+
+    import viz
+    experts = participants[0]
+    novices = participants[1]
+    plots_experts = {}
+    plots_novices = {}
+
+    # box plots std and mean
+    for expert in experts:
+        expert, location = expert.split("_")
+        plots_experts[expert + '_' + location] = {}
+        if location == "si":
+            raw_data = hangtime_si.players[expert]['data'][['timestamp', 'acc_x', 'acc_y', 'acc_z']][
+                        hangtime_si.players[expert]['features'][activity]['start_index']:
+                        hangtime_si.players[expert]['features'][activity]['end_index']]
+            # magnitude = hangtime_si.players[expert]['data'][['timestamp', 'magnitude']][
+            #             hangtime_si.players[expert]['features'][activity]['start_index']:
+            #             hangtime_si.players[expert]['features'][activity]['end_index']]
+            # magnitude = magnitude.set_index('timestamp')
+            fft = hangtime_si.players[expert]['features'][activity]['fft']
+            snr = hangtime_si.players[expert]['features'][activity]['snr']
+            if activity != 'complete_signal':
+                filtered_magnitude = hangtime_si.players[expert]['features'][activity]['filtered_magnitude']
+            if activity == 'dribbling':
+                n_dribblings = hangtime_si.players[expert]['features'][activity]['dribblings_per_seconds']
+                peaks = hangtime_si.players[expert]['features'][activity]['signal_peaks']
+        else:
+            raw_data = hangtime_bo.players[expert]['data'][['timestamp', 'acc_x', 'acc_y', 'acc_z']][
+                       hangtime_bo.players[expert]['features'][activity]['start_index']:
+                       hangtime_bo.players[expert]['features'][activity]['end_index']]
+            # magnitude = hangtime_bo.players[expert]['data'][['timestamp', 'magnitude']][
+            #             hangtime_bo.players[expert]['features'][activity]['start_index']:
+            #             hangtime_bo.players[expert]['features'][activity]['end_index']]
+            # magnitude = magnitude.set_index('timestamp')
+
+            fft = hangtime_bo.players[expert]['features'][activity]['fft']
+            snr = hangtime_bo.players[expert]['features'][activity]['snr']
+            if activity != 'complete_signal':
+                filtered_magnitude = hangtime_bo.players[expert]['features'][activity]['filtered_magnitude']
+            if activity == 'dribbling':
+                n_dribblings = hangtime_bo.players[expert]['features'][activity]['dribblings_per_seconds']
+                peaks = hangtime_bo.players[expert]['features'][activity]['signal_peaks']
+        plots_experts[expert + '_' + location]['raw'] = viz.vizualize_one_player(raw_data, False)
+        plots_experts[expert + '_' + location]['std_mean'] = viz.plot_std_mean_box_plot(filtered_magnitude)
+        plots_experts[expert + '_' + location]['fft'] = viz.plot_fft(fft, snr, expert)
+        if activity == 'dribbling':
+            plots_experts[expert + '_' + location]['peaks'] = viz.plot_peaks(filtered_magnitude, peaks, n_dribblings)
+    for novice in novices:
+        novice, location = novice.split("_")
+        plots_novices[novice + '_' + location] = {}
+        if location == "si":
+            raw_data = hangtime_si.players[novice]['data'][['timestamp', 'acc_x', 'acc_y', 'acc_z']][
+                       hangtime_si.players[novice]['features'][activity]['start_index']:
+                       hangtime_si.players[novice]['features'][activity]['end_index']]
+            # magnitude = hangtime_si.players[novice]['data'][['timestamp', 'magnitude']][
+            #             hangtime_si.players[novice]['features'][activity]['start_index']:
+            #             hangtime_si.players[novice]['features'][activity]['end_index']]
+            # magnitude = magnitude.set_index('timestamp')
+
+            fft = hangtime_si.players[novice]['features'][activity]['fft']
+            snr = hangtime_si.players[novice]['features'][activity]['snr']
+            if activity != 'complete_signal':
+                filtered_magnitude = hangtime_si.players[novice]['features'][activity]['filtered_magnitude']
+            if activity == 'dribbling':
+                n_dribblings = hangtime_si.players[novice]['features'][activity]['dribblings_per_seconds']
+                peaks = hangtime_si.players[novice]['features'][activity]['signal_peaks']
+        else:
+            raw_data = hangtime_bo.players[novice]['data'][['timestamp', 'acc_x', 'acc_y', 'acc_z']][
+                       hangtime_bo.players[novice]['features'][activity]['start_index']:
+                       hangtime_bo.players[novice]['features'][activity]['end_index']]
+            # magnitude = hangtime_bo.players[novice]['data'][['timestamp', 'magnitude']][
+            #             hangtime_bo.players[novice]['features'][activity]['start_index']:
+            #             hangtime_bo.players[novice]['features'][activity]['end_index']]
+            # magnitude = magnitude.set_index('timestamp')
+            fft = hangtime_bo.players[novice]['features'][activity]['fft']
+            snr = hangtime_bo.players[novice]['features'][activity]['snr']
+            if activity != 'complete_signal':
+                filtered_magnitude = hangtime_bo.players[novice]['features'][activity]['filtered_magnitude']
+            if activity == 'dribbling':
+                n_dribblings = hangtime_bo.players[novice]['features'][activity]['dribblings_per_seconds']
+                peaks = hangtime_bo.players[novice]['features'][activity]['signal_peaks']
+
+
+        plots_novices[novice + '_' + location]['raw'] = viz.vizualize_one_player(raw_data, False)
+        plots_novices[novice + '_' + location]['std_mean'] = viz.plot_std_mean_box_plot(filtered_magnitude)
+        plots_novices[novice + '_' + location]['fft'] = viz.plot_fft(fft, snr, novice)
+        if activity == 'dribbling':
+            plots_novices[novice + '_' + location]['peaks'] = viz.plot_peaks(filtered_magnitude, peaks, n_dribblings)
+
+    return plots_novices, plots_experts

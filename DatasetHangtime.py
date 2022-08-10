@@ -62,49 +62,6 @@ class HangtimeUtils:
         print(dribbleCounter)
 
 
-def _dribbleCounter(subject, df, place, printing=False):
-    from scipy.signal import find_peaks
-    import viz
-    import Util
-    import numpy as np
-    from scipy.signal import savgol_filter
-    # df = max(df, key=len).reset_index().loc[:, ['timestamp', 'acc_z']]
-    df = max(df, key=len).reset_index()
-    filtered_signal = Util.mean_filter(df, 10)
-    # filtered_signal = pd.Series(savgol_filter(df.loc[:, 'acc_z'], 100, 1))
-    peaks, _ = find_peaks(filtered_signal, prominence=.6)
-
-    y_val_peaks = np.full(fill_value=np.nan, shape=(filtered_signal.shape[0]))
-    y_val_peaks[peaks] = filtered_signal.iloc[peaks]
-    y_val_peaks = pd.Series(y_val_peaks, index=filtered_signal.index)
-
-    n_dribblings = _calc_dribblings_per_second(filtered_signal, y_val_peaks)
-    if printing:
-        viz.plot_peaks(filtered_signal, y_val_peaks, n_dribblings, subject, place)
-    return n_dribblings
-
-
-def _calc_dribblings_per_second(y_val_peaks):
-    import numpy as np
-    from datetime import datetime
-    y_val_peaks = y_val_peaks.dropna()
-    peak_indices = y_val_peaks.index.values
-    last_second = datetime.strptime(peak_indices[0], '%Y-%m-%d %H:%M:%S.%f').second
-    counter = 1
-    dribblings_per_second = []
-    for i in range(1, len(peak_indices)):
-        current_second = datetime.strptime(peak_indices[i], '%Y-%m-%d %H:%M:%S.%f').second
-        if current_second == last_second:
-            counter = counter + 1
-        else:
-            dribblings_per_second.append(counter)
-            counter = 1
-        last_second = current_second
-        # print()
-
-    return np.mean(dribblings_per_second)
-
-
 def sort_experts_and_novices(hangtime_si, hangtime_bo):
     experts = {}
     novices = {}
@@ -135,7 +92,10 @@ hangtime_bo = HangtimeUtils('Boulder', '/Users/alexander/Documents/Resources/rea
 hangtime_si.load_data_of_subject('0846', 'novice')
 hangtime_si.load_data_of_subject('f2ad', 'expert')
 hangtime_si.load_data_of_subject('ac59', 'expert')
+hangtime_si.load_data_of_subject('b512', 'expert')
 hangtime_si.load_data_of_subject('2dd9', 'expert')
+hangtime_si.load_data_of_subject('4d70', 'expert')
+hangtime_si.load_data_of_subject('10f0', 'expert')
 hangtime_si.load_data_of_subject('05d8', 'expert')
 hangtime_bo.load_data_of_subject('2dd9', 'novice')
 hangtime_bo.load_data_of_subject('10f0', 'novice')
@@ -143,31 +103,31 @@ hangtime_bo.load_data_of_subject('10f0', 'novice')
 # novices_and_experts = novices.update(experts)
 # experiments.show_periodicity_novices_experts(novices, experts)
 # experiments.novice_vs_expert_dribbling(novices, experts)
-hangtime_si = Util.calc_magnitude_wrapper(hangtime_si)
-hangtime_bo = Util.calc_magnitude_wrapper(hangtime_bo)
-hangtime_si = experiments.feature_analysis(hangtime_si)
-hangtime_bo = experiments.feature_analysis(hangtime_bo)
-hangtime_si.load_activity_of_subjects('dribbling')
-hangtime_si.load_activity_of_subjects('shot')
-hangtime_si.load_activity_of_subjects('layup')
-hangtime_si.load_activity_of_subjects('running')
-hangtime_bo.load_activity_of_subjects('dribbling')
-hangtime_bo.load_activity_of_subjects('shot')
-hangtime_bo.load_activity_of_subjects('layup')
-hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'dribbling', mode='longest_intervall')
-hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'dribbling', mode='longest_intervall')
-hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'shot', mode='longest_intervall')
-hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'shot', mode='longest_intervall')
-hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'layup', mode='longest_intervall')
-hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'layup', mode='longest_intervall')
+# hangtime_si = Util.calc_magnitude_wrapper(hangtime_si)
+# hangtime_bo = Util.calc_magnitude_wrapper(hangtime_bo)
+# hangtime_si = experiments.feature_analysis(hangtime_si)
+# hangtime_bo = experiments.feature_analysis(hangtime_bo)
+# hangtime_si.load_activity_of_subjects('dribbling')
+# hangtime_si.load_activity_of_subjects('shot')
+# hangtime_si.load_activity_of_subjects('layup')
+# hangtime_si.load_activity_of_subjects('running')
+# hangtime_bo.load_activity_of_subjects('dribbling')
+# hangtime_bo.load_activity_of_subjects('shot')
+# hangtime_bo.load_activity_of_subjects('layup')
+# hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'dribbling', mode='longest_intervall')
+# hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'dribbling', mode='longest_intervall')
+# hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'shot', mode='longest_intervall')
+# hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'shot', mode='longest_intervall')
+# hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'layup', mode='longest_intervall')
+# hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'layup', mode='longest_intervall')
 
-# viz.vizualize_one_player(hangtime_si.data['b512'], '')
+viz.vizualize_one_player(hangtime_si.players['4d70']['data'], show=True)
 # novices, experts = sort_experts_and_novices(hangtime_si, hangtime_bo)
 # viz.plot_novice_vs_expert(novices=novices, experts=experts)
-labeled_subjects = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
-                    "05d8"]
+# labeled_subjects = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
+#                     "05d8"]
 # viz.plot_novice_vs_expert(hangtime_si, hangtime_bo, activity='layup')
-viz.plot_full_feature_analysis(hangtime_si, hangtime_bo, (['2dd9_si', 'ac59_si', 'f2ad_si'], ['2dd9_bo', '10f0_bo', '0846_si']), activity='layup')
+# viz.plot_full_feature_analysis(hangtime_si, hangtime_bo, (['10f0_si', 'ac59_si', 'f2ad_si'], ['2dd9_bo', '10f0_bo', '0846_si']), activity='dribbling')
 
 # # labeled_subjects = ['05d8']
 # for subject in labeled_subjects:

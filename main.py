@@ -271,17 +271,17 @@ def save_decompressed_files(dataframes: list, device_id: str, place: str, true_f
                    "c6f3": 16208  # Gianni
                    }
     else:
-        options = {"10f0": 29619,
+        options = {"10f0": 29600, # 29575
                    "2dd9": 3805,  #
-                   "4d70": 32766,
-                   "9bd4": 33733,
-                   "ce9d": 4988,  #
-                   "f2ad": 7325,
-                   "ac59": 1,
+                   "4d70": 32710, #  32079
+                   "9bd4": 33728,
+                   "ce9d": 4945,  #
+                   "f2ad": 7563,
+                   "ac59": 29579,
                    "0846": 7235,
                    "a0da": 37293,
                    "b512": 35593,
-                   "c6f3": 1
+                   "c6f3": 35877  # 36519
                    }
     start = options[device_id]
     for dataframe in dataframes:
@@ -311,15 +311,15 @@ def make_equidistant(subject_files):
             next_df = subject_files[fc + 1]
 
             current_df = current_df.append(next_df.iloc[0], ignore_index=False)
-            subject_files[fc + 1] = next_df.iloc[1:, :]
+            # subject_files[fc + 1] = next_df.iloc[1:, :]
             t = pd.date_range(start=current_df.index[0],
                               end=current_df.index[-1],
                               periods=current_df.shape[0])
-            current_df = current_df.set_index(t)
+            current_df = current_df.set_index(t)[:-1]
 
         else:
             true_freq = round(np.mean(true_freqs))
-            freq_new_ms = ((1 / true_freq) * 1000)
+            freq_new_ms = int(((1 / true_freq) * 1000))
             new_range = pd.date_range(current_df.index[0], current_df.index[-1], freq=str(round(freq_new_ms)) + "ms")
             n_nans = new_range.shape[0] - current_df.shape[0]
             if n_nans > 0:
@@ -330,6 +330,8 @@ def make_equidistant(subject_files):
                 new_range.append(current_df.index[0])
                 for idx in range(1, current_df.index.shape[0]):
                     new_range.append(current_df.index[idx-1]+datetime.timedelta(milliseconds=freq_new_ms))
+                current_df = current_df.set_index(pd.DatetimeIndex(new_range))
+            else:
                 current_df = current_df.set_index(pd.DatetimeIndex(new_range))
         subject_files[fc] = current_df
         true_freqs.append(round(np.mean(checkfordrift(current_df))))
@@ -342,9 +344,9 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = '2dd9'
-all_ = False
-place = "Siegen"
+selected_subject = 'ac59'
+all_ = True
+place = "Boulder"
 dataset_folder = ""
 if place == "Boulder":
     dataset_folder = "/Users/alexander/Downloads/Boulder Study/smartwatch_data/"

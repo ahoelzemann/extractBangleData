@@ -331,28 +331,34 @@ def plot_novice_vs_expert_fft(novices, experts):
     fig.show()
 
 
-def vizualize_one_player(player_data, player_id):
+def vizualize_one_player(player_data, show):
     import plotly.graph_objects as go
-
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_x'],
-                             # mode='lines',
-                             name='x-axis'))
-    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_y'],
-                             mode='lines',
-                             name='y-axis'))
-    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_z'],
-                             mode='lines',
-                             name='z-axis'))
 
-    fig.update_traces(marker_line_width=4)
+    # timestamps_time = [i.split(' ', 1)[1] for i in player_data['timestamp']]
+    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_x'], showlegend=False,
+                             name='x-axis', legendgroup='x_axis', line=dict(width=1, color='red')))
+    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_y'],
+                             mode='lines', legendgroup='y_axis', showlegend=False,
+                             name='y-axis', line=dict(width=1, color='green')))
+    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_z'],
+                             mode='lines', showlegend=False,
+                             name='z-axis', legendgroup='z_axis', line=dict(width=1, color='blue')))
+
+    # fig.update_traces(marker_line_width=5)
     # fig = px.line(x=ts, y=ys.loc[:, ['acc_z']].values.tolist())
-    fig.show()
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_tickformat = "%H:%M:%S",
+                    xaxis = dict(showgrid=False,
+                        tickfont=dict(family='Helvetica', size=30, color='black')),
+                    yaxis = dict(showgrid=False,
+                        tickfont=dict(family='Helvetica', size=30, color='black')))
+    if show:
+        fig.show()
+    return fig
 
 
 def plot_imu_data(imu, title, time_as_indices=True):
     """
-    Method written by kvl for reading out the files that is written by the imu itself
     :param imu:
     :param title:
     :param time_as_indices:
@@ -384,20 +390,33 @@ def plot_imu_data(imu, title, time_as_indices=True):
     plt.show()
 
 
-def plot_peaks(df, peaks, dribblings_per_second, subject, place, show=False):
+def plot_peaks(df, peaks, n_dribblings, show=False):
     import plotly.graph_objects as go
 
     fig = go.Figure()
-
+    # timestamps_time = pd.to_datetime(df.reset_index()['index']).dt.time
+    # peaks_timestamps = pd.to_datetime(peaks.reset_index()['index']).dt.time
     fig.add_trace(go.Scatter(x=df.index, y=df,
                              mode='lines',
-                             name='lines'))
+                             name='Magnitude', legendgroup='magnitude', showlegend=False,
+                             line=dict(width=1, color='dodgerblue')))
     fig.add_trace(go.Scatter(x=peaks.index, y=peaks,
                              mode='markers',
-                             name='markers', connectgaps=False))
-    fig.update_layout(
-        title_text="City: <b>" + place + "</b>, " + "Subject: <b>" + subject + "<br>" + "</b>Activity: <b>dribbling</b><br>Dribblings/sec: <b>" + str(
-            dribblings_per_second) + "</b>")
+                             text=["Dribblings/sec: " + str("%.2f" % round(n_dribblings, 2))],
+                             textposition="top right",
+                             textfont=dict(
+                                 family="sans serif",
+                                 size=12,
+                                 color="black"
+                             ),
+                             marker=dict(
+                                 color='red',
+                                 size=3
+                             ), showlegend=False,
+                             name='Dribblings', legendgroup='peaks', connectgaps=False))
+    # fig.update_layout(xaxis_tickformat = '%d %B <br>%Y')
+    # title_text="Subject: <b>" + subject + "<br>" + "</b>Activity: <b>dribbling</b><br>Dribblings/sec: <b>" + str(
+    #     dribblings_per_second) + "</b>")
     if show:
         fig.show()
 
@@ -405,43 +424,121 @@ def plot_peaks(df, peaks, dribblings_per_second, subject, place, show=False):
         return fig
 
 
-def plot_std_mean_box_plot(stds, means):
-    import plotly.express as px
-    # df = px.data.tips()
-    fig = px.box(df, y="total_bill")
-    # fig.show()
+def plot_std_mean_box_plot(magnitude):
+    import plotly.graph_objects as go
 
+    fig = go.Figure()
+    magnitude = magnitude.reset_index()
+    fig.add_trace(go.Box(
+        y=magnitude[0],
+        name='',
+        marker_color='royalblue',
+        boxmean='sd',  # represent mean and standard deviation
+        boxpoints=False,
+        legendgroup='boxplot',
+        showlegend=False,
+        # mean=True,
+        # median=False
+    ))
+    # fig.show()
     return fig
 
 
-def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity='all'):
-    experts = participants[0]
-    novices = participants[1]
-    plots_experts = {}
-    plots_novices = {}
-    for expert in experts:
-        expert, location = expert.split("_")
-        plots_experts[expert] = {}
-        if location == "si":
-            stds, mean = hangtime_si.players[expert]['features'][activity]['stds'], hangtime_si.players[expert]['features'][activity][
-                'means']
-        else:
-            stds, mean = hangtime_bo.players[expert]['features'][activity]['stds'], hangtime_si.players[expert]['features'][activity][
-                'means']
-        plots_experts[expert]['std_mean'] = plot_std_mean_box_plot(stds, mean)
-    for novice in novices:
-        novice, location = novice.split("_")
-        plots_novices[novice] = {}
-        if location == "si":
-            stds, mean = hangtime_si.players[novice]['features'][activity]['stds'], \
-                         hangtime_si.players[novice]['features'][activity][
-                             'means']
-        else:
-            stds, mean = hangtime_bo.players[novice]['features'][activity]['stds'], \
-                         hangtime_si.players[novice]['features'][activity][
-                             'means']
-        plots_novices[novice]['std_mean'] = plot_std_mean_box_plot(stds, mean)
-    hangtime_si = Util.cut_participants(hangtime_si, participants[0])
-    hangtime_bo = Util.cut_participants(hangtime_bo, participants[1])
-    # for
-    # std_mean_plots = plot_std_mean_box_plot(hangtime_si, hangtime_bo)
+def plot_fft(fft, signal_to_noise_ratio, subject):
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(y=fft, showlegend=False,
+                             mode='lines',
+                             name='fft', legendgroup='fft',
+                             line=dict(width=2, color='green')))
+    # fig.show()
+    return fig
+
+
+def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity='complete_signal'):
+    import Util
+    novices_plots, experts_plots = Util.gather_plots(hangtime_si, hangtime_bo, participants, activity=activity)
+    from plotly.subplots import make_subplots
+    rows = len(participants[0]) * 2
+    columns = 4 if activity == 'dribbling' else 3
+    titles = ['Raw Data', 'Std and Mean', 'Fast Fourier Transformation',
+              'Magnitude and Dribblings'] if activity == 'dribbling' else ['Raw Data', 'Std and Mean',
+                                                                           'Fast Fourier Transformation']
+    raw_plot_size = 0.35 if activity == 'dribbling' else 0.7
+    fig = make_subplots(
+        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles, column_widths=[raw_plot_size, 0.05, 0.25, 0.35]
+        # subplot_titles=(
+        #     'Novice: ' + novices[0], "Expert: " + experts[0], 'Novice: ' + novices[1],
+        #     "Expert: " + experts[1], 'Novice: ' + novices[2], "Expert: " + experts[2])
+    )
+    row = 1
+    column = 1
+    for expert in experts_plots:
+        for figure_name in experts_plots[expert]:
+            figure = experts_plots[expert][figure_name]
+            for trace in figure.data:
+                # trace = trace.update(showlegend=False)
+                # if figure_name == 'peaks':
+                #     fig.add_annotation(text="Absolutely-positioned annotation",
+                #                        xref="paper", yref="paper",
+                #                        x=0.1, y=0.1, showarrow=False)
+                fig.add_trace(trace, row=row, col=column)
+                # if figure_name == 'raw' or figure_name == "std_mean":
+            column = column + 1
+        fig.update_yaxes(title_text="E_" + expert, row=row, col=1)
+        column = 1
+        row = row + 1
+    for novice in novices_plots:
+        for figure_name in novices_plots[novice]:
+            figure = novices_plots[novice][figure_name]
+            for trace in figure.data:
+                fig.add_trace(trace, row=row, col=column)
+            column = column + 1
+        fig.update_yaxes(title_text="N_" + novice, row=row, col=1)
+        column = 1
+        row = row + 1
+
+    if activity == 'dribbling':
+        fig.layout.xaxis.dtick = "%H:%M:%S"
+        fig.layout.xaxis4.dtick = "%H:%M:%S"
+        fig.layout.xaxis5.dtick = "%H:%M:%S"
+        fig.layout.xaxis8.dtick = "%H:%M:%S"
+        fig.layout.xaxis9.dtick = "%H:%M:%S"
+        fig.layout.xaxis12.dtick = "%H:%M:%S"
+        fig.layout.xaxis13.dtick = "%H:%M:%S"
+        fig.layout.xaxis16.dtick = "%H:%M:%S"
+        fig.layout.xaxis17.dtick = "%H:%M:%S"
+        fig.layout.xaxis20.dtick = "%H:%M:%S"
+        fig.layout.xaxis21.dtick = "%H:%M:%S"
+        fig.layout.xaxis24.dtick = "%H:%M:%S"
+    else:
+        fig.layout.xaxis.dtick = "%H:%M:%S"
+        fig.layout.xaxis4.dtick = "%H:%M:%S"
+        fig.layout.xaxis7.dtick = "%H:%M:%S"
+        fig.layout.xaxis10.dtick = "%H:%M:%S"
+        fig.layout.xaxis13.dtick = "%H:%M:%S"
+        fig.layout.xaxis16.dtick = "%H:%M:%S"
+
+    if activity == 'dribbling':
+        end = 7
+    else:
+        end = 5
+    for i in range(0, end):
+        fig.data[i].showlegend = True
+    fig.update_layout(
+        title_text="Experts vs. Novices, Activity: " + activity,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.08,
+            xanchor="right",
+            x=1
+        ))
+    # fig.update_layout(showlegend=True,
+    #                   row=1)
+    # for l in range(0, len(fig.data)):
+    #     if fig.data[l].text != None:
+    #         annotation = fig.data[l].text
+    #         fig['layout']['annotations'][l].update(text=annotation[0])
+    fig.show()
+    # return
