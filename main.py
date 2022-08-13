@@ -255,33 +255,33 @@ def save_decompressed_files(dataframes: list, device_id: str, place: str, true_f
     data = []
     global_starting_time = pd.Timestamp('2022-02-26 14:13:21.000')
     if place == "Siegen":
-        options = {"10f0": 16906,  # sync, RAML, labeled 16855
-                   "2dd9": 16920,  # sync,       labeled 16868 16931
-                   "4d70": 16949,  # sync, RAML, labeled
-                   "9bd4": 17018,  # sync,       labeled 16924
-                   "ce9d": 16950,  # sync, RAML, labeled 16761 16719
-                   "f2ad": 16992,
-                   "ac59": 16987,  # sync, RAML 16751
-                   "0846": 16949,  # sync, RAML, labeled  16882,
-                   "a0da": 17006,  # sync, RAML, labeled 17006
-                   "b512": 16917,  # sync,16893 RAML, labeled  16917
-                   "e90f": 17111,  # sync, RAML, labeled 16982 16960
-                   "4991": 17001,  # sync, RAML, labeled 16802
-                   "05d8": 16950,  # sync, RAML, labeled 16975
+        options = {"10f0": 16900,  # 16906
+                   "2dd9": 16849,  # 16920
+                   "4d70": 16928,  # 16949
+                   "9bd4": 17040,  # 16818
+                   "ce9d": 16956,  # 16950
+                   "f2ad": 17019,  # 16992
+                   "ac59": 16882,  # 16987
+                   "0846": 16847,  # 16949
+                   "a0da": 16980,  # 17010
+                   "b512": 16922,  # 16917
+                   "e90f": 17051,  # 17111
+                   "4991": 16981,  # 17001
+                   "05d8": 16980,  # 16950 16868
                    "c6f3": 16208  # Gianni
                    }
     else:
-        options = {"10f0": 29600, # 29575
-                   "2dd9": 3805,  #
-                   "4d70": 32710, #  32079
-                   "9bd4": 33728,
-                   "ce9d": 4945,  #
-                   "f2ad": 7563,
-                   "ac59": 29579,
-                   "0846": 7235,
-                   "a0da": 37293,
-                   "b512": 35593,
-                   "c6f3": 35877  # 36519
+        options = {"10f0": 29670, # 29600
+                   "2dd9": 3795,  # 3805
+                   "4d70": 32760, # 32079
+                   "9bd4": 33748, # 33728
+                   "ce9d": 4985,  # 4945
+                   "f2ad": 7563, #  7563
+                   "ac59": 29619, # 29579
+                   "0846": 7215, # 7235
+                   "a0da": 37333, # 37293
+                   "b512": 35593, # 35593
+                   "c6f3": 35877  # 35877
                    }
     start = options[device_id]
     for dataframe in dataframes:
@@ -344,8 +344,8 @@ def readBinFile(path):
     return bufferedReader.read()
 
 
-selected_subject = 'ac59'
-all_ = True
+selected_subject = 'a0da'
+all_ = False
 place = "Boulder"
 dataset_folder = ""
 if place == "Boulder":

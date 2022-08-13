@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 import datetime
 
-# labeled_participants = [
-#                         "2dd9"]
+# labeled_participants = ["0846"]
 # labeled_participants = ["10f0", "2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "e90f", "4991",
 #                         "05d8"] # SI
-place = 'Boulder'
+# place = 'Siegen'
 labeled_participants = ["2dd9", "4d70", "9bd4", "ce9d", "f2ad", "ac59", "0846", "a0da", "b512", "c6f3", ] # Bo
+place = 'Boulder'
 # labeled_participants = ['ac59']
 
 # place = 'Boulder'
@@ -26,7 +26,7 @@ def read_labels(participant: str, place: str):
     timestamps = sensor_data['timestamp'].to_numpy(dtype=str)
     timestamps = list(map(np.datetime64, timestamps))
     timestamps = np.array(timestamps)
-    labels = pd.read_csv('/Users/alexander/Documents/Resources/annotations/' + place + "/" + participant + '.txt',
+    labels = pd.read_csv('/Users/alexander/Documents/Resources/annotations/no_void/' + place + "/" + participant + '.txt',
                          delimiter='\t',
                          index_col=0, header=None, lineterminator='\n')
 
@@ -40,7 +40,7 @@ def read_labels(participant: str, place: str):
         # if row[-1][-1] != 'rebound':
         start_time = row[1]['start']
         end_time = row[1]['end']
-        dt_start = datetime.datetime.strptime(start_time, "%H:%M:%S.%f")
+        dt_start = datetime.datetime.strptime(start_time, "%H:%M:%S.%f").time()
         timedelta_start = pd.Timedelta(hours=dt_start.hour, minutes=dt_start.minute, seconds=dt_start.second,
                                        microseconds=dt_start.microsecond).to_timedelta64()
         dt_end = datetime.datetime.strptime(end_time, "%H:%M:%S.%f").time()
@@ -54,6 +54,8 @@ def read_labels(participant: str, place: str):
         label_length = end_index - start_index
         new_label = np.full(fill_value=row[1]['label'], shape=(label_length, 1))
 
+        if new_label.shape[0] > 0 and new_label[0] == "shto":
+            print("shto")
         sensor_data.loc[start_index:end_index - 1, row[1]['layer']] = new_label
 
     sensor_data = sensor_data.set_index(sensor_data['timestamp'])
@@ -75,4 +77,4 @@ for participant in labeled_participants:
         nulls = data.iloc[np.where(data.isnull().values == True)]
         print(nulls)
     # if participant == ''
-    data.to_csv('/Users/alexander/Documents/Resources/ready/' + place + '/' + participant + '.csv', sep=',')
+    data.to_csv('/Users/alexander/Documents/Resources/ready/no_void/' + place + '/' + participant + '.csv', sep=',')
