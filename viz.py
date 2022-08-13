@@ -464,9 +464,9 @@ def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity=
     titles = ['Raw Data', 'Std and Mean', 'Fast Fourier Transformation',
               'Magnitude and Dribblings'] if activity == 'dribbling' else ['Raw Data', 'Std and Mean',
                                                                            'Fast Fourier Transformation']
-    raw_plot_size = 0.35 if activity == 'dribbling' else 0.7
+    raw_plot_size = 0.55 if activity == 'dribbling' else 0.9
     fig = make_subplots(
-        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles, column_widths=[raw_plot_size, 0.05, 0.25, 0.35]
+        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles, column_widths=[raw_plot_size, 0.05, 0.15, 0.25]
         # subplot_titles=(
         #     'Novice: ' + novices[0], "Expert: " + experts[0], 'Novice: ' + novices[1],
         #     "Expert: " + experts[1], 'Novice: ' + novices[2], "Expert: " + experts[2])
@@ -485,6 +485,7 @@ def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity=
                 fig.add_trace(trace, row=row, col=column)
                 # if figure_name == 'raw' or figure_name == "std_mean":
             column = column + 1
+
         fig.update_yaxes(title_text="E_" + expert, row=row, col=1)
         column = 1
         row = row + 1
@@ -523,10 +524,10 @@ def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity=
         end = 7
     else:
         end = 5
-    for i in range(0, end):
+    for i in range(0, 3):
         fig.data[i].showlegend = True
     fig.update_layout(
-        title_text="Experts vs. Novices, Activity: " + activity,
+        # title_text="Activity: " + activity,
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -542,3 +543,82 @@ def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity=
     #         fig['layout']['annotations'][l].update(text=annotation[0])
     fig.show()
     # return
+
+
+
+def plot_class_scatter_plots(hangtime_si, hangtime_bo, feature, activity='complete_signal'):
+    import Util
+    from plotly.subplots import make_subplots
+    shot_plots = Util.gather_scatter_plots(hangtime_si, hangtime_bo, feature, activity[0])
+    layup_plots = Util.gather_scatter_plots(hangtime_si, hangtime_bo, feature, activity[1])
+    rows = 2
+    columns = len(shot_plots)
+    column_width = list(np.full(fill_value=1/columns, shape=columns))
+    titles = ['All Subjects']
+    player_names = list(shot_plots.keys())
+    for x in range(len(shot_plots)-1):
+        titles.append(player_names[x])
+    fig = make_subplots(
+        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles, column_widths=column_width, shared_xaxes=True, shared_yaxes=True,
+        # subplot_titles=(
+        #     'Novice: ' + novices[0], "Expert: " + experts[0], 'Novice: ' + novices[1],
+        #     "Expert: " + experts[1], 'Novice: ' + novices[2], "Expert: " + experts[2])
+    )
+    row = 1
+    column = 2
+    for player in shot_plots:
+        figure = shot_plots[player]
+        if player != 'main_plot':
+            for trace in figure.data:
+                fig.add_trace(trace, row=1, col=column)
+
+        else:
+            for trace in figure.data:
+                fig.add_trace(trace, row=1, col=1)
+        fig.update_yaxes(title_text=activity[0], row=1, col=1)
+        column = column + 1
+    column = 2
+    for player in layup_plots:
+        figure = layup_plots[player]
+        if player != 'main_plot':
+            for trace in figure.data:
+                fig.add_trace(trace, row=2, col=column)
+
+        else:
+            for trace in figure.data:
+                fig.add_trace(trace, row=2, col=1)
+        fig.update_yaxes(title_text=activity[1], row=2, col=1)
+        column = column + 1
+    fig.update_layout(showlegend=False)
+    fig.show()
+    # return
+
+def create_scatter_plot(data, feature, mode=None):
+    import plotly.express as px
+    x = ''
+    y = ''
+    if feature == 'pca':
+        x = 'Component 1'
+        y = 'Component 2'
+    if feature == 'axis_sum':
+        x = 'Absolute Sum x-axis'
+        y = 'Absolute Sum y-axis'
+    if mode == None:
+        fig = px.scatter(data, x=x, y=y)
+    else:
+        fig = px.scatter(data, x=x, y=y, color='subject', symbol='subject')
+    # fig.show()
+
+    return fig
+
+
+def create_scatter_plot_3d(data, mode=None):
+    import plotly.express as px
+    # if subject != None:
+    if mode == None:
+        fig = px.scatter_3d(data, x='Absolute Sum x-axis', y='Absolute Sum y-axis', z='Absolute Sum z-axis')
+    else:
+        fig = px.scatter_3d(data, x='Absolute Sum x-axis', y='Absolute Sum y-axis', z='Absolute Sum z-axis', color='subject')
+        fig.show()
+
+    return fig

@@ -41,6 +41,13 @@ def calc_magnitude_wrapper(dataframe):
 
     return dataframe
 
+def calc_pca_window(window):
+    from sklearn.decomposition import PCA
+    pca = PCA(n_components=2)
+    pca = pca.fit(window)
+    PCA(n_components=2)
+
+    return pca
 
 def cut_df_at_timestamps(df, start, end):
     from datetime import datetime
@@ -67,7 +74,7 @@ def calc_fft(mag):
     from scipy.fft import fft
     mag = mag.to_numpy()
     signalFFT = fft(mag)
-    signalPSD = np.abs(signalFFT)[1:101]
+    signalPSD = np.abs(signalFFT)[1:61]
     dominant_freq_index = np.where(signalPSD == np.amax(signalPSD))[0]
     signal_to_noise_ratio = signalPSD[dominant_freq_index] / np.mean(np.delete(signalPSD, dominant_freq_index))
     return signalPSD, signal_to_noise_ratio[0]
@@ -83,7 +90,7 @@ def get_peaks(activity, df, printing=False):
     filtered_signal = mean_filter(df, 10)
     n_dribblings = None
     # filtered_signal = pd.Series(savgol_filter(df.loc[:, 'acc_z'], 100, 1))
-    peaks, _ = find_peaks(filtered_signal, prominence=0.9)
+    peaks, _ = find_peaks(filtered_signal, prominence=1.4)
 
     y_val_peaks = np.full(fill_value=np.nan, shape=(filtered_signal.shape[0]))
     y_val_peaks[peaks] = filtered_signal.iloc[peaks]
@@ -129,7 +136,7 @@ def gather_plots(hangtime_si, hangtime_bo, participants, activity='complete_sign
     for expert in experts:
         expert, location = expert.split("_")
         plots_experts[expert + '_' + location] = {}
-        if location == "si":
+        if location == "eu":
             raw_data = hangtime_si.players[expert]['data'][['timestamp', 'acc_x', 'acc_y', 'acc_z']][
                         hangtime_si.players[expert]['features'][activity]['start_index']:
                         hangtime_si.players[expert]['features'][activity]['end_index']]
@@ -168,7 +175,7 @@ def gather_plots(hangtime_si, hangtime_bo, participants, activity='complete_sign
     for novice in novices:
         novice, location = novice.split("_")
         plots_novices[novice + '_' + location] = {}
-        if location == "si":
+        if location == "eu":
             raw_data = hangtime_si.players[novice]['data'][['timestamp', 'acc_x', 'acc_y', 'acc_z']][
                        hangtime_si.players[novice]['features'][activity]['start_index']:
                        hangtime_si.players[novice]['features'][activity]['end_index']]
@@ -208,3 +215,56 @@ def gather_plots(hangtime_si, hangtime_bo, participants, activity='complete_sign
             plots_novices[novice + '_' + location]['peaks'] = viz.plot_peaks(filtered_magnitude, peaks, n_dribblings)
 
     return plots_novices, plots_experts
+
+def gather_scatter_plots(hangtime_si, hangtime_bo, feature, activity):
+
+    import viz
+
+    plots_experts = {}
+    plots_novices = {}
+    mag_sums = []
+    axis_sums = []
+    pcas = []
+    scatter_plots = {}
+    for player in hangtime_si.players.keys():
+        players_data = hangtime_si.players[player]
+        mag_sum = players_data['features'][activity]['mag_sum']
+        pca = players_data['features'][activity]['pca']
+        x_sum = players_data['features'][activity]['x_sum']
+        y_sum = players_data['features'][activity]['y_sum']
+        z_sum = players_data['features'][activity]['z_sum']
+        tmp = pd.concat([x_sum, y_sum], axis=1)
+        if feature == 'pca':
+            scatter_plots[player+"_eu"] = viz.create_scatter_plot(pca, feature='pca')
+        if feature == 'axis_sums':
+            scatter_plots[player+"_eu"] = viz.create_scatter_plot(tmp, feature='axis_sum')
+        fill_value = np.full(fill_value=player + "_na", shape=(pca.shape[0], 1))
+        tmp['subject'] = fill_value
+        pca['subject'] = fill_value
+        pcas.append(pca)
+        axis_sums.append(tmp)
+
+    for player in hangtime_bo.players.keys():
+        players_data = hangtime_bo.players[player]
+        mag_sum = players_data['features'][activity]['mag_sum']
+        pca = players_data['features'][activity]['pca']
+        x_sum = players_data['features'][activity]['x_sum']
+        y_sum = players_data['features'][activity]['y_sum']
+        z_sum = players_data['features'][activity]['z_sum']
+        tmp = pd.concat([x_sum, y_sum], axis=1)
+        if feature == 'pca':
+            scatter_plots[player+"_na"] = viz.create_scatter_plot(pca, feature='pca')
+        if feature == 'axis_sums':
+            scatter_plots[player+"_na"] = viz.create_scatter_plot(tmp, feature='axis_sum')
+        fill_value = np.full(fill_value=player + "_na", shape=(pca.shape[0], 1))
+        tmp['subject'] = fill_value
+        pca['subject'] = fill_value
+        pcas.append(pca)
+        axis_sums.append(tmp)
+    pcas = pd.concat(pcas)
+    axis_sums = pd.concat(axis_sums)
+    if feature == 'pca':
+        scatter_plots['main_plot'] =  viz.create_scatter_plot(pcas, mode="main_plot", feature='pca')
+    if feature == 'axis_sums':
+        scatter_plots['main_plot'] = viz.create_scatter_plot(axis_sums, mode="main_plot", feature='axis_sum')
+    return scatter_plots

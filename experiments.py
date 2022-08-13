@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 import Util
 import viz
@@ -46,7 +47,7 @@ def show_periodicity_novices_experts(novices, experts):
         mag = list(map(Util.calc_magnitude, signal))
         signalFFT = fft(mag)
         ## Get power spectral density
-        signalPSD = np.abs(signalFFT)[1:101]
+        signalPSD = np.abs(signalFFT)[1:61]
         dominant_freq_index = np.where(signalPSD == np.amax(signalPSD))[0]
         signal_to_noise_ratio = signalPSD[dominant_freq_index] / np.mean(np.delete(signalPSD, dominant_freq_index))
         signal_to_noise_nov.append(signal_to_noise_ratio[0])
@@ -56,7 +57,7 @@ def show_periodicity_novices_experts(novices, experts):
         mag = list(map(Util.calc_magnitude, signal))
         signalFFT = fft(mag)
         ## Get power spectral density
-        signalPSD = np.abs(signalFFT)[1:101]
+        signalPSD = np.abs(signalFFT)[1:61]
         dominant_freq_index = np.where(signalPSD == np.amax(signalPSD))[0]
         signal_to_noise_ratio = signalPSD[dominant_freq_index] / np.mean(np.delete(signalPSD, dominant_freq_index))
         signal_to_noise_exp.append(signal_to_noise_ratio[0])
@@ -124,6 +125,32 @@ def feature_analysis_activity(dataframe, activity, start=0, end=-1, mode='longes
                 dataframe.players[subject]['activity_indices'][activity]['longest_intervall']]
             start = dataframe.players[subject]['activity_indices'][activity]['starts'][
                 dataframe.players[subject]['activity_indices'][activity]['longest_intervall']]
-            # signal = dataframe.data[subject]['magnitude']
-        feature_analysis(dataframe, activity, start, end, mode)
+            feature_analysis(dataframe, activity, start, end, mode)
+        if mode == 'complete_signal':
+            mag_sum = []
+            pcas = []
+            x_sums = []
+            y_sums = []
+            z_sums = []
+            dataframe.players[subject]['features'][activity] = {}
+            windows = dataframe.players[subject]['activity_indices'][activity]
+            for i in range(0, len(windows['starts'])):
+                window = dataframe.players[subject]['data'].iloc[windows['starts'][i]:windows['ends'][i]]
+                x_sum = np.abs(np.sum(window['acc_x']))
+                y_sum = np.abs(np.sum(window['acc_y']))
+                z_sum = np.abs(np.sum(window['acc_z']))
+                pca = Util.calc_pca_window(window[['acc_x', 'acc_y', 'acc_z']])
+                mag_sum.append(np.abs(np.sum(window['magnitude'])))
+                pcas.append(pca.singular_values_)
+                x_sums.append(x_sum)
+                y_sums.append(y_sum)
+                z_sums.append(z_sum)
+            dataframe.players[subject]['features'][activity]['x_sum'] = pd.DataFrame(x_sums, columns=['Absolute Sum x-axis'])
+            dataframe.players[subject]['features'][activity]['y_sum'] = pd.DataFrame(y_sums,
+                                                                                     columns=['Absolute Sum y-axis'])
+            dataframe.players[subject]['features'][activity]['z_sum'] = pd.DataFrame(z_sums,
+                                                                                     columns=['Absolute Sum z-axis'])
+            dataframe.players[subject]['features'][activity]['mag_sum'] = pd.DataFrame(mag_sum)
+            dataframe.players[subject]['features'][activity]['pca'] = pd.DataFrame(pcas, columns=['Component 1', 'Component 2'])
+
     return dataframe
