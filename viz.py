@@ -331,29 +331,51 @@ def plot_novice_vs_expert_fft(novices, experts):
     fig.show()
 
 
-def vizualize_one_player(player_data, show):
+def vizualize_one_player(player_data, show, xticks='date'):
     import plotly.graph_objects as go
     fig = go.Figure()
 
     # timestamps_time = [i.split(' ', 1)[1] for i in player_data['timestamp']]
-    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_x'], showlegend=False,
-                             name='x-axis', legendgroup='x_axis', line=dict(width=1, color='red')))
-    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_y'],
-                             mode='lines', legendgroup='y_axis', showlegend=False,
-                             name='y-axis', line=dict(width=1, color='green')))
-    fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_z'],
-                             mode='lines', showlegend=False,
-                             name='z-axis', legendgroup='z_axis', line=dict(width=1, color='blue')))
+    if xticks == 'date':
+        fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_x'], showlegend=False,
+                                 name='x-axis', legendgroup='x_axis', line=dict(width=1, color='red')))
+        fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_y'],
+                                 mode='lines', legendgroup='y_axis', showlegend=False,
+                                 name='y-axis', line=dict(width=1, color='green')))
+        fig.add_trace(go.Scatter(x=player_data['timestamp'], y=player_data['acc_z'],
+                                 mode='lines', showlegend=False,
+                                 name='z-axis', legendgroup='z_axis', line=dict(width=1, color='blue')))
+    else:
+        x_axis = np.arange(0, player_data['acc_x'].shape[0])
+        fig.add_trace(go.Scatter(x=x_axis, y=player_data['acc_x'], showlegend=False,
+                                 name='x-axis', legendgroup='x_axis', line=dict(width=1, color='red')))
+        fig.add_trace(go.Scatter(x=x_axis, y=player_data['acc_y'],
+                                 mode='lines', legendgroup='y_axis', showlegend=False,
+                                 name='y-axis', line=dict(width=1, color='green')))
+        fig.add_trace(go.Scatter(x=x_axis, y=player_data['acc_z'],
+                                 mode='lines', showlegend=False,
+                                 name='z-axis', legendgroup='z_axis', line=dict(width=1, color='blue')))
 
     # fig.update_traces(marker_line_width=5)
     # fig = px.line(x=ts, y=ys.loc[:, ['acc_z']].values.tolist())
-    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_tickformat = "%H:%M:%S",
-                    xaxis = dict(showgrid=False,
-                        tickfont=dict(family='Helvetica', size=30, color='black')),
-                    yaxis = dict(showgrid=False,
-                        tickfont=dict(family='Helvetica', size=30, color='black')))
-    if show:
-        fig.show()
+    if xticks == 'date':
+        fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_tickformat="%H:%M:%S",
+                          xaxis=dict(showgrid=False,
+                                     tickfont=dict(family='Helvetica', size=30, color='black')),
+                          yaxis=dict(showgrid=False,
+                                     tickfont=dict(family='Helvetica', size=30, color='black')))
+    else:
+        fig.update_layout(
+            xaxis=dict(
+                showgrid=False,
+                tickfont=dict(family='Helvetica', size=30, color='black')
+            ),
+            yaxis=dict(showgrid=False,
+                       tickfont=dict(family='Helvetica', size=30, color='black')
+                       )
+        )
+        if show:
+            fig.show()
     return fig
 
 
@@ -466,7 +488,8 @@ def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity=
                                                                            'Fast Fourier Transformation']
     raw_plot_size = 0.55 if activity == 'dribbling' else 0.9
     fig = make_subplots(
-        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles, column_widths=[raw_plot_size, 0.05, 0.15, 0.25]
+        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles,
+        column_widths=[raw_plot_size, 0.05, 0.15, 0.25]
         # subplot_titles=(
         #     'Novice: ' + novices[0], "Expert: " + experts[0], 'Novice: ' + novices[1],
         #     "Expert: " + experts[1], 'Novice: ' + novices[2], "Expert: " + experts[2])
@@ -545,7 +568,6 @@ def plot_full_feature_analysis(hangtime_si, hangtime_bo, participants, activity=
     # return
 
 
-
 def plot_class_scatter_plots(hangtime_si, hangtime_bo, feature, activity='complete_signal'):
     import Util
     from plotly.subplots import make_subplots
@@ -553,13 +575,14 @@ def plot_class_scatter_plots(hangtime_si, hangtime_bo, feature, activity='comple
     layup_plots = Util.gather_scatter_plots(hangtime_si, hangtime_bo, feature, activity[1])
     rows = 2
     columns = len(shot_plots)
-    column_width = list(np.full(fill_value=1/columns, shape=columns))
+    column_width = list(np.full(fill_value=1 / columns, shape=columns))
     titles = ['All Subjects']
     player_names = list(shot_plots.keys())
-    for x in range(len(shot_plots)-1):
+    for x in range(len(shot_plots) - 1):
         titles.append(player_names[x])
     fig = make_subplots(
-        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles, column_widths=column_width, shared_xaxes=True, shared_yaxes=True,
+        rows=rows, cols=columns, vertical_spacing=0.02, horizontal_spacing=0.02, subplot_titles=titles,
+        column_widths=column_width, shared_xaxes=True, shared_yaxes=True,
         # subplot_titles=(
         #     'Novice: ' + novices[0], "Expert: " + experts[0], 'Novice: ' + novices[1],
         #     "Expert: " + experts[1], 'Novice: ' + novices[2], "Expert: " + experts[2])
@@ -590,9 +613,57 @@ def plot_class_scatter_plots(hangtime_si, hangtime_bo, feature, activity='comple
         fig.update_yaxes(title_text=activity[1], row=2, col=1)
         column = column + 1
     fig.update_layout(showlegend=False)
-    fig.show()
-    # return
+    fig.update_xaxes(range=[-1, 250])
+    fig.update_yaxes(range=[-1, 250])
 
+    fig.show()
+
+
+def plot_class_data(player, indices, activities):
+    import Util
+    from plotly.subplots import make_subplots
+    class_plots = Util.gather_class_plots(player, indices, activities)
+    rows = 2
+    columns = int(len(class_plots) / 2)
+    column_width = list(np.full(fill_value=1 / columns, shape=columns))
+    titles = activities[:-1]
+    fig = make_subplots(
+        rows=rows, cols=columns, vertical_spacing=0.12, horizontal_spacing=0.02, subplot_titles=titles,
+        column_widths=column_width, shared_yaxes=True
+    )
+    row = 1
+    column = 1
+    for class_name in class_plots.keys():
+        figure = class_plots[class_name]
+        for trace in figure.data:
+            if class_name == 'jumping':
+                continue
+            if class_name == 'shot' or class_name == 'layup' or class_name == 'pass' or class_name == 'rebound':
+                fig.add_trace(trace, row=2, col=column)
+            else:
+                fig.add_trace(trace, row=1, col=column)
+            # trace.update_layout(xaxis=dict(showgrid=False,
+            #                              tickfont=dict(family='Helvetica', size=30, color='black')),
+            #                   yaxis=dict(showgrid=False,
+            #                              tickfont=dict(family='Helvetica', size=30, color='black')))
+        if column == 5:
+            column = 1
+        else:
+            column = column + 1
+    fig.update_layout(showlegend=False)
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      xaxis=dict(showgrid=False),
+                      yaxis=dict(showgrid=False))
+    fig.update_yaxes(range=[-10, 10])
+    fig.update_annotations(font_size=20)
+    # fig.for_each_xaxis()
+    fig.for_each_xaxis(lambda axis: update_axisFont(axis))
+    fig.for_each_yaxis(lambda axis: update_axisFont(axis))
+    fig.show()
+
+def update_axisFont(axis):
+
+    axis.tickfont.size = 16
 def create_scatter_plot(data, feature, mode=None):
     import plotly.express as px
     x = ''
@@ -604,11 +675,12 @@ def create_scatter_plot(data, feature, mode=None):
         x = 'Absolute Sum x-axis'
         y = 'Absolute Sum y-axis'
     if mode == None:
-        fig = px.scatter(data, x=x, y=y)
+        fig = px.scatter(data, x=x, y=y, range_x=[0, 40], range_y=[0, 40])
     else:
-        fig = px.scatter(data, x=x, y=y, color='subject', symbol='subject')
+        fig = px.scatter(data, x=x, y=y, color='subject', symbol='subject', range_x=[0, 40], range_y=[0, 40])
     # fig.show()
-
+    fig.update_xaxes(range=[0, 40])
+    fig.update_yaxes(range=[0, 40])
     return fig
 
 
@@ -618,7 +690,8 @@ def create_scatter_plot_3d(data, mode=None):
     if mode == None:
         fig = px.scatter_3d(data, x='Absolute Sum x-axis', y='Absolute Sum y-axis', z='Absolute Sum z-axis')
     else:
-        fig = px.scatter_3d(data, x='Absolute Sum x-axis', y='Absolute Sum y-axis', z='Absolute Sum z-axis', color='subject')
+        fig = px.scatter_3d(data, x='Absolute Sum x-axis', y='Absolute Sum y-axis', z='Absolute Sum z-axis',
+                            color='subject')
         fig.show()
 
     return fig

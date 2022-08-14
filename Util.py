@@ -268,3 +268,16 @@ def gather_scatter_plots(hangtime_si, hangtime_bo, feature, activity):
     if feature == 'axis_sums':
         scatter_plots['main_plot'] = viz.create_scatter_plot(axis_sums, mode="main_plot", feature='axis_sum')
     return scatter_plots
+
+
+
+def gather_class_plots(player, indices, activities):
+
+    import viz
+
+    class_plots = {}
+    for index in range(len(indices)):
+        class_plot = viz.vizualize_one_player(player['data'].iloc[indices[index][0]:indices[index][1]], False, 'linear')
+        class_plots[activities[index]] = class_plot
+
+    return class_plots

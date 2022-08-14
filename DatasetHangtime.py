@@ -108,6 +108,7 @@ hangtime_bo.load_data_of_subject('c6f3', 'novice')
 # novices_and_experts = novices.update(experts)
 # experiments.show_periodicity_novices_experts(novices, experts)
 # experiments.novice_vs_expert_dribbling(novices, experts)
+# viz.vizualize_one_player(hangtime_si.players['10f0']['data'], show=True, xticks='linear')
 hangtime_si = Util.calc_magnitude_wrapper(hangtime_si)
 hangtime_bo = Util.calc_magnitude_wrapper(hangtime_bo)
 hangtime_si = experiments.feature_analysis(hangtime_si)
@@ -115,7 +116,13 @@ hangtime_bo = experiments.feature_analysis(hangtime_bo)
 hangtime_si.load_activity_of_subjects('dribbling')
 hangtime_si.load_activity_of_subjects('shot')
 hangtime_si.load_activity_of_subjects('layup')
+hangtime_si.load_activity_of_subjects('pass')
+hangtime_si.load_activity_of_subjects('rebound')
 hangtime_si.load_activity_of_subjects('running')
+hangtime_si.load_activity_of_subjects('walking')
+hangtime_si.load_activity_of_subjects('sitting')
+hangtime_si.load_activity_of_subjects('standing')
+hangtime_si.load_activity_of_subjects('jumping')
 hangtime_bo.load_activity_of_subjects('dribbling')
 hangtime_bo.load_activity_of_subjects('shot')
 hangtime_bo.load_activity_of_subjects('layup')
@@ -126,7 +133,13 @@ hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'shot', mode='c
 hangtime_si = experiments.feature_analysis_activity(hangtime_si, 'layup', mode='complete_signal')
 hangtime_bo = experiments.feature_analysis_activity(hangtime_bo, 'layup', mode='complete_signal')
 
-viz.plot_class_scatter_plots(hangtime_si, hangtime_bo, 'pca', activity=['shot', 'layup'])
+# viz.plot_class_scatter_plots(hangtime_si, hangtime_bo, 'axis_sums', activity=['shot', 'layup'])
+
+indices = [[62489, 63489], [73400, 74400], [83765, 84765], [89175, 90175], [139490, 140490],
+           [196480, 196630], [1526, 1676], [19450, 19600], [19350, 19500] , [19400, 19450]]
+activities = ['sitting', 'standing', 'walking', 'running', 'dribbling',
+              'shot', 'layup', 'pass', 'rebound', 'jumping']
+viz.plot_class_data(hangtime_si.players['10f0'], indices, activities)
 
 # viz.vizualize_one_player(hangtime_si.players['4d70']['data'], show=True)
 # novices, experts = sort_experts_and_novices(hangtime_si, hangtime_bo)
